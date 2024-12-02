@@ -11,4 +11,4 @@ Encoders: [3, 2]\
 Sensors:\
 \
 [left, left-front, right-front, right]\
-[4   ,          5,           6,    13]\
+[4   ,          5,           6,    13]
