@@ -1,7 +1,7 @@
 # maze-solving-bot-using-dfs
 We have created a general algorithm to solve a maze, irrespective of the complexity. 
 # Notes
-motors are connected as follows:
+motors are connected as follows:\
 forward [7, 11]\
 backward [8, 12]\
 enable [9, 10]\
