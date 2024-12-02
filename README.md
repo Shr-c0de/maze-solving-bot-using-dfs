@@ -5,7 +5,7 @@ motors are connected as follows:
 forward [7, 11]\
 backward [8, 12]\
 enable [9, 10]\
-__
+\
 Encoders: [3, 2]\
 \
 Sensors:\
