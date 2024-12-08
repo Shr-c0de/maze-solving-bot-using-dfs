@@ -42,15 +42,6 @@ target_link_libraries(dfsMaze
         hardware_i2c
         hardware_pio
         )
-# Add the VL53L0X library
-#add_library(VL53L0X STATIC VL53L0X.cpp)
-
-# Link the VL53L0X header to the library
-#target_include_directories(VL53L0X PUBLIC ${CMAKE_CURRENT_LIST_DIR})
-
-#target_link_libraries(dfsMaze
-#        VL53L0X
-#   )
 
 # Set program name and version
 pico_set_program_name(dfsMaze "dfsMaze")
