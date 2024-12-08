@@ -59,6 +59,10 @@ void VL53L0X::setAddress(uint8_t new_addr)
     writeReg(I2C_SLAVE_DEVICE_ADDRESS, new_addr & 0x7F);
     address = new_addr;
 }
+uint8_t VL53L0X::getAddress()
+{
+    return address;
+}
 
 // Initialize sensor using sequence based on VL53L0X_DataInit(),
 // VL53L0X_StaticInit(), and VL53L0X_PerformRefCalibration().
