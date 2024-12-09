@@ -3,16 +3,16 @@
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
 #include "hardware/pio.h"
-#include "VL53L0X.h"
+// pico libraries
 
-// I2C defines
-// This example will use I2C0 on GPIO8 (SDA) and GPIO9 (SCL) running at 400KHz.
-// Pins can be changed, see the GPIO function select table in the datasheet for information on GPIO assignments
+#include "blink.pio.h"
+#include "VL53L0X.h"
+// user libraries
+
 #define I2C_PORT i2c0
 #define I2C_SDA 8
 #define I2C_SCL 9
-
-#include "blink.pio.h"
+// i2c pin definitons
 
 void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
 {
@@ -51,40 +51,22 @@ void i2c_scan()
     }
     printf("Done.\n");
 }
+// i2c checkers
 
-int main()
+class Sensor
 {
-    stdio_init_all();
+private:
+    int xshut[4] = {2, 3, 4, 5};
+    uint8_t addr[4] = {0x30, 0x31, 0x32, 0x33};
+    VL53L0X s[4];
 
-    // I2C Initialisation. Using it at 400Khz.
-    i2c_init(I2C_PORT, 400 * 1000);
-
-    gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
-    gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
-    gpio_pull_up(I2C_SDA);
-    gpio_pull_up(I2C_SCL);
-
-    PIO pio = pio0;
-    uint offset = pio_add_program(pio, &blink_program);
-    blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 3);
-
-    int xshut[2] = {4, 5};
-    for (int i = 0; i < 2; i++)
+    // if sensors give bad reading, we can reboot individually
+    void reboot(int i)
     {
         gpio_init(xshut[i]);
         gpio_set_dir(xshut[i], GPIO_OUT);
         gpio_put(xshut[i], 0);
-    }
-    sleep_ms(5000);
-    printf("Program starts:\n\n");
-    i2c_scan();
-
-    VL53L0X sensor[2];
-    uint8_t addr[2] = {0x30, 0x40};
-
-    for (int i = 0; i < 2; i++)
-    {
-        printf("Sensor %d setup\n", i);
+        printf("Sensor %d setup\n", i + 1);
         gpio_put(xshut[i], 1);
         sleep_ms(50);
         VL53L0X tmp;
@@ -94,15 +76,94 @@ int main()
         tmp.setSignalRateLimit(0.01);
         tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 18);
         tmp.setAddress(addr[i]);
-        sensor[i] = tmp;
-        i2c_scan();
-        sleep_ms(500);
+        s[i] = tmp;
+        sleep_ms(50);
     }
 
+public:
+    // initialises all sensors, switches them all off.
+    Sensor()
+    {
+#ifndef i2c_begin
+#define i2c_begin
+        i2c_init(I2C_PORT, 400 * 1000);
+
+        gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
+        gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
+        gpio_pull_up(I2C_SDA);
+        gpio_pull_up(I2C_SCL);
+#endif
+        // switching off all sensors, so we can initialise them one-by-one in init()
+        for (int i = 0; i < 4; i++)
+        {
+            gpio_init(xshut[i]);
+            gpio_set_dir(xshut[i], GPIO_OUT);
+            gpio_put(xshut[i], 0);
+        }
+        sleep_ms(100); // to stabilise
+    }
+
+    // starts the sensors, gives each different addresses,
+    void init()
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            printf("Sensor %d setup\n", i + 1);
+            gpio_put(xshut[i], 1);
+            sleep_ms(50);
+            VL53L0X tmp;
+            tmp.init();
+            tmp.setTimeout(500);
+            tmp.setMeasurementTimingBudget(70000);
+            tmp.setSignalRateLimit(0.01);
+            tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 18);
+            tmp.setAddress(addr[i]);
+            s[i] = tmp;
+            sleep_ms(50);
+        }
+        printf("Ready to go!");
+    }
+
+    // get readings
+    void readings(int *arr)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            arr[i] = s[i].readRangeSingleMillimeters();
+        }
+    }
+};
+
+int main()
+{
+
+    stdio_init_all();
+    sleep_ms(3000);
+
+    // blink, doesnt use cpu
+    PIO pio = pio0;
+    uint offset = pio_add_program(pio, &blink_program);
+    blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 3);
+
+
+    Sensor S;
+    i2c_scan();
+    sleep_ms(1000);
+    S.init();
+    printf("Program starts:\n\n");
+    i2c_scan();
+
+    int arr[4];
     while (1)
     {
-        printf("sensor1 value = %d\n sensor2 value = %d\n\n",
-               sensor[0].readRangeSingleMillimeters(), sensor[1].readRangeSingleMillimeters());
+
+        S.readings(arr);
+        for (int i = 0; i < 4; i++)
+        {
+            printf("%d\n", arr[i]);
+        }
         sleep_ms(1000);
+        i2c_scan();
     }
+
 }
