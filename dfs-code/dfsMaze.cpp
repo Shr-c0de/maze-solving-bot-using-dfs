@@ -29,5 +29,32 @@ void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
 }
 
 int main(){
-    //alg goes here
+    stdio_init_all();
+    sleep_ms(3000); //wait for stdio
+
+    // blink, doesnt use cpu
+    PIO pio = pio0;
+    uint offset = pio_add_program(pio, &blink_program);
+    blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 3);
+
+    Sensor S;
+    Motor M;
+    i2c_scan();
+    sleep_ms(1000);
+    S.init();
+    printf("Program starts:\n\n");
+    i2c_scan();
+
+    int arr[4];
+    while (1)
+    {
+
+        S.readings(arr);
+        for (int i = 0; i < 4; i++)
+        {
+            printf("%d\n", arr[i]);
+        }
+        sleep_ms(1000);
+        i2c_scan();
+    }
 }
