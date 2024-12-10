@@ -24,15 +24,16 @@ void Motor::set_motor(int motor, int speed, bool forward)
     }
 }
 
-void Motor::encoder_a_irq_handler(uint gpio, uint32_t events)
-{
-    //cA++;
-}
-
-void Motor::encoder_b_irq_handler(uint gpio, uint32_t events)
-{
-    //cB++;
-}
+ static void global_encoder_irq_handler(uint gpio, uint32_t events) {
+        if (gpio == ENCODER_A)
+        {
+            cA++;
+        } 
+        else if (gpio == ENCODER_B) 
+        {
+            cB++;
+        }
+    }
 
 Motor::Motor()
 {
