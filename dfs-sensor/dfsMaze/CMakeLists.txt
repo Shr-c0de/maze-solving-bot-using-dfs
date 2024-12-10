@@ -34,12 +34,12 @@ pico_sdk_init()
 
 
 # Add executable. Default name is the project name, version 0.1
-add_executable(dfsMaze dfsMaze.cpp VL53L0X.cpp)
+add_executable(dfsMaze VL53L0X.cpp motors.cpp Sensors.cpp dfsMaze.cpp)
 
-# Link the VL53L0X library to the dfsMaze executable
 target_link_libraries(dfsMaze
         pico_stdlib
         hardware_i2c
+        hardware_pwm
         hardware_pio
         )
 
