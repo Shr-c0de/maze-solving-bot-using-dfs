@@ -165,6 +165,9 @@ void Motor::curved_turn(float radius, float angle, bool is_left_turn)
     set_motor(1, 0, true);
 }
 
+volatile long Motor::cA = 0;
+volatile long Motor::cB = 0;
+
 int motor_example()
 {
     Motor motor;
