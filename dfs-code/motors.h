@@ -24,7 +24,7 @@ public:
 
     constexpr static int STEPS_PER_UNIT = static_cast<int>((RATIO * 32.0) / (WHEEL_DIAMETER * PI));
 
-    volatile long cA = 0, cB = 0;
+    static volatile long cA = 0, cB = 0;
 
     uint slice_num_a, slice_num_b;
 
