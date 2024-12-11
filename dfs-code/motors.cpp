@@ -1,4 +1,6 @@
 #include "motors.h"
+
+
 int Motor::calculate_pid_speed(int target, int current, float &error, float &prev_error, float &integral)
 {
     error = target - current;
@@ -24,7 +26,7 @@ void Motor::set_motor(int motor, int speed, bool forward)
     }
 }
 
- static void global_encoder_irq_handler(uint gpio, uint32_t events) {
+ void Motor::global_encoder_irq_handler(uint gpio, uint32_t events) {
         if (gpio == ENCODER_A)
         {
             cA++;
@@ -37,8 +39,8 @@ void Motor::set_motor(int motor, int speed, bool forward)
 
 Motor::Motor()
 {
-    init_motor();
-    init_encoders();
+    Motor::init_motor();
+    Motor::init_encoders();
 }
 
 void Motor::init_motor()
@@ -165,8 +167,6 @@ void Motor::curved_turn(float radius, float angle, bool is_left_turn)
     set_motor(1, 0, true);
 }
 
-volatile long Motor::cA = 0;
-volatile long Motor::cB = 0;
 
 int motor_example()
 {

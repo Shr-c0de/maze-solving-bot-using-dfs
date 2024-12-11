@@ -56,5 +56,6 @@ int main(){
         }
         sleep_ms(1000);
         i2c_scan();
+        M.move_forward(1);
     }
 }

@@ -1,15 +1,4 @@
-// #include <stdio.h>
-// #include <vector>
-// #include "pico/stdlib.h"
-// #include "hardware/i2c.h"
-// #include "hardware/pio.h"
-// // pico libraries
-
-// #include "blink.pio.h"
-// #include "VL53L0X.h"
-
 #include "Sensors.h"
-// user libraries
 
 bool reserved_addr(uint8_t addr)
 {
