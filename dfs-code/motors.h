@@ -14,15 +14,17 @@
 
 extern volatile long cA, cB;
 
-#define ENCODER_A 18
-#define ENCODER_B 19
+#define ENCODER_A 14
+#define ENCODER_B 15
 class Motor
 {
 public:
-    const uint MOTOR_A_PWM = 15;
-    const uint MOTOR_A_DIR = 14;
-    const uint MOTOR_B_PWM = 16;
-    const uint MOTOR_B_DIR = 17;
+    const uint MOTOR_A_PWM = 16;
+    const uint MOTOR_A_FRONT = 18;
+    const uint MOTOR_A_BACK = 19;
+    const uint MOTOR_B_PWM = 17;
+    const uint MOTOR_B_FRONT = 20;
+    const unit MOTOR_B_BACK= 21;
 
     const int STEPS_PER_UNIT = static_cast<int>((RATIO * 32.0) / (WHEEL_DIAMETER * PI));
 
@@ -34,9 +36,6 @@ public:
 
     int calculate_pid_speed(int target, int current, float &error, float &prev_error, float &integral);
     void set_motor(int motor, int speed, bool forward);
-
-    static void encoder_a_irq_handler(uint gpio, uint32_t events);
-    static void encoder_b_irq_handler(uint gpio, uint32_t events);
 
     static void global_encoder_irq_handler(uint gpio, uint32_t events);
     Motor();
