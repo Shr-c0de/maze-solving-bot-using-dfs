@@ -14,15 +14,14 @@ int Motor::calculate_pid_speed(int target, int current, float &error, float &pre
 
 void Motor::set_motor(int motor, int speed, bool forward)
 {
-    if (motor == 0)
-    { // Motor A
-        gpio_put(MOTOR_A_DIR, forward);
-        pwm_set_gpio_level(MOTOR_A_PWM, speed);
-    }
-    else if (motor == 1)
-    { // Motor B
-        gpio_put(MOTOR_B_DIR, forward);
-        pwm_set_gpio_level(MOTOR_B_PWM, speed);
+     if (motor == 0) { // Motor A
+        gpio_put(FORWARD_A, forward ? 1 : 0);
+        gpio_put(BACKWARD_A, forward ? 0 : 1);
+        pwm_set_gpio_level(MOTOR_ENABLE_A, speed);
+    } else if (motor == 1) { // Motor B
+        gpio_put(FORWARD_B, forward ? 1 : 0);
+        gpio_put(BACKWARD_B, forward ? 0 : 1);
+        pwm_set_gpio_level(MOTOR_ENABLE_B, speed);
     }
 }
 
@@ -49,10 +48,15 @@ void Motor::init_motor()
     gpio_set_function(MOTOR_A_PWM, GPIO_FUNC_PWM);
     gpio_set_function(MOTOR_B_PWM, GPIO_FUNC_PWM);
 
-    gpio_init(MOTOR_A_DIR);
-    gpio_init(MOTOR_B_DIR);
-    gpio_set_dir(MOTOR_A_DIR, GPIO_OUT);
-    gpio_set_dir(MOTOR_B_DIR, GPIO_OUT);
+
+    gpio_init(FORWARD_A);
+    gpio_init(BACKWARD_A);
+    gpio_init(FORWARD_B);
+    gpio_init(BACKWARD_B);
+    gpio_set_dir(FORWARD_A, GPIO_OUT);
+    gpio_set_dir(BACKWARD_A, GPIO_OUT);
+    gpio_set_dir(FORWARD_B, GPIO_OUT);
+    gpio_set_dir(BACKWARD_B, GPIO_OUT);
 
     slice_num_a = pwm_gpio_to_slice_num(MOTOR_A_PWM);
     slice_num_b = pwm_gpio_to_slice_num(MOTOR_B_PWM);
@@ -74,6 +78,15 @@ void Motor::move_forward(float units)
     int steps = static_cast<int>(units * STEPS_PER_UNIT);
     cA = cB = 0;
 
+    gpio_put(FORWARD_A, 1);
+    gpio_put(BACKWARD_A, 0);
+    gpio_put(FORWARD_B, 1);
+    gpio_put(BACKWARD_B, 0);
+
+    gpio_put(MOTOR_ENABLE_A, 1);
+    gpio_put(MOTOR_ENABLE_B, 1);
+
+
     while (cA < steps && cB < steps)
     {
         int left_speed = calculate_pid_speed(steps, cA, error_a, prev_error_a, integral_a);
@@ -85,14 +98,48 @@ void Motor::move_forward(float units)
         sleep_ms(10);
     }
 
-    set_motor(0, 0, true);
-    set_motor(1, 0, true);
+    gpio_put(MOTOR_ENABLE_A, 0);
+    gpio_put(MOTOR_ENABLE_B, 0);
+}
+
+void Motor::move_backward(float units) {
+    int steps = static_cast<int> (units * STEPS_PER_UNIT);
+
+    cA = 0;
+    cB = 0;
+
+    gpio_put(FORWARD_A, 0);
+    gpio_put(BACKWARD_A, 1);
+    gpio_put(FORWARD_B, 0);
+    gpio_put(BACKWARD_B, 1);
+
+    gpio_put(MOTOR_ENABLE_A, 1);
+    gpio_put(MOTOR_ENABLE_B, 1);
+
+    while (cA < steps && cB < steps) {
+        int left_speed = calculate_pid_speed(steps, cA, error_a, prev_error_a, integral_a);
+        int right_speed = calculate_pid_speed(steps, cB, error_b, prev_error_b, integral_b);
+
+        set_motor(0, false, speed_a); 
+        set_motor(1, false, speed_b); 
+    }
+
+    gpio_put(MOTOR_ENABLE_A, 0);
+    gpio_put(MOTOR_ENABLE_B, 0);
 }
 
 void Motor::turn_left(float units)
 {
     int steps = static_cast<int>((units * STEPS_PER_UNIT) / 3.2);
     cA = cB = 0;
+
+    gpio_put(FORWARD_A, 0);
+    gpio_put(BACKWARD_A, 1);
+    gpio_put(FORWARD_B, 1);
+    gpio_put(BACKWARD_B, 0);
+
+    gpio_put(MOTOR_ENABLE_A, 1);
+    gpio_put(MOTOR_ENABLE_B, 1);
 
     while (cA < steps || cB < steps)
     {
@@ -103,8 +150,8 @@ void Motor::turn_left(float units)
         set_motor(0, left_speed, false);
     }
 
-    set_motor(0, 0, true);
-    set_motor(1, 0, true);
+    gpio_put(MOTOR_ENABLE_A, 0);
+    gpio_put(MOTOR_ENABLE_B, 0);
 }
 
 void Motor::turn_right(float units)
@@ -121,8 +168,9 @@ void Motor::turn_right(float units)
         set_motor(1, right_speed, false);
     }
 
-    set_motor(0, 0, true);
-    set_motor(1, 0, true);
+    
+    gpio_put(MOTOR_ENABLE_A, 0);
+    gpio_put(MOTOR_ENABLE_B, 0);
 }
 
 void Motor::curved_turn(float radius, float angle, bool is_left_turn)
