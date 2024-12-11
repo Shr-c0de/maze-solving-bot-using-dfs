@@ -102,31 +102,7 @@ void Motor::move_forward(float units)
     gpio_put(MOTOR_ENABLE_B, 0);
 }
 
-void Motor::move_backward(float units) {
-    int steps = static_cast<int> (units * STEPS_PER_UNIT);
 
-    cA = 0;
-    cB = 0;
-
-    gpio_put(FORWARD_A, 0);
-    gpio_put(BACKWARD_A, 1);
-    gpio_put(FORWARD_B, 0);
-    gpio_put(BACKWARD_B, 1);
-
-    gpio_put(MOTOR_ENABLE_A, 1);
-    gpio_put(MOTOR_ENABLE_B, 1);
-
-    while (cA < steps && cB < steps) {
-        int left_speed = calculate_pid_speed(steps, cA, error_a, prev_error_a, integral_a);
-        int right_speed = calculate_pid_speed(steps, cB, error_b, prev_error_b, integral_b);
-
-        set_motor(0, false, speed_a); 
-        set_motor(1, false, speed_b); 
-    }
-
-    gpio_put(MOTOR_ENABLE_A, 0);
-    gpio_put(MOTOR_ENABLE_B, 0);
-}
 
 void Motor::turn_left(float units)
 {
