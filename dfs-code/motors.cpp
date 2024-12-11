@@ -15,13 +15,13 @@ int Motor::calculate_pid_speed(int target, int current, float &error, float &pre
 void Motor::set_motor(int motor, int speed, bool forward)
 {
      if (motor == 0) { // Motor A
-        gpio_put(FORWARD_A, forward ? 1 : 0);
-        gpio_put(BACKWARD_A, forward ? 0 : 1);
-        pwm_set_gpio_level(MOTOR_ENABLE_A, speed);
+        gpio_put(MOTOR_A_FRONT, forward ? 1 : 0);
+        gpio_put(MOTOR_A_FRONT, forward ? 0 : 1);
+        pwm_set_gpio_level(MOTOR_A_PWM, speed);
     } else if (motor == 1) { // Motor B
-        gpio_put(FORWARD_B, forward ? 1 : 0);
-        gpio_put(BACKWARD_B, forward ? 0 : 1);
-        pwm_set_gpio_level(MOTOR_ENABLE_B, speed);
+        gpio_put(MOTOR_B_FRONT, forward ? 1 : 0);
+        gpio_put(MOTOR_B_BACK, forward ? 0 : 1);
+        pwm_set_gpio_level(MOTOR_B_PWM, speed);
     }
 }
 
@@ -49,14 +49,14 @@ void Motor::init_motor()
     gpio_set_function(MOTOR_B_PWM, GPIO_FUNC_PWM);
 
 
-    gpio_init(FORWARD_A);
-    gpio_init(BACKWARD_A);
-    gpio_init(FORWARD_B);
-    gpio_init(BACKWARD_B);
-    gpio_set_dir(FORWARD_A, GPIO_OUT);
-    gpio_set_dir(BACKWARD_A, GPIO_OUT);
-    gpio_set_dir(FORWARD_B, GPIO_OUT);
-    gpio_set_dir(BACKWARD_B, GPIO_OUT);
+    gpio_init(MOTOR_A_FRONT);
+    gpio_init(MOTOR_A_BACK);
+    gpio_init(MOTOR_B_FRONT);
+    gpio_init(MOTOR_B_BACK);
+    gpio_set_dir(MOTOR_A_FRONT, GPIO_OUT);
+    gpio_set_dir(MOTOR_A_BACK, GPIO_OUT);
+    gpio_set_dir(MOTOR_B_FRONT, GPIO_OUT);
+    gpio_set_dir(MOTOR_B_BACK, GPIO_OUT);
 
     slice_num_a = pwm_gpio_to_slice_num(MOTOR_A_PWM);
     slice_num_b = pwm_gpio_to_slice_num(MOTOR_B_PWM);
@@ -78,13 +78,13 @@ void Motor::move_forward(float units)
     int steps = static_cast<int>(units * STEPS_PER_UNIT);
     cA = cB = 0;
 
-    gpio_put(FORWARD_A, 1);
-    gpio_put(BACKWARD_A, 0);
-    gpio_put(FORWARD_B, 1);
-    gpio_put(BACKWARD_B, 0);
+    gpio_put(MOTOR_A_FRONT, 1);
+    gpio_put(MOTOR_A_BACK, 0);
+    gpio_put(MOTOR_B_FRONT, 1);
+    gpio_put(MOTOR_B_BACK, 0);
 
-    gpio_put(MOTOR_ENABLE_A, 1);
-    gpio_put(MOTOR_ENABLE_B, 1);
+    gpio_put(MOTOR_A_PWM, 1);
+    gpio_put(MOTOR_B_PWM, 1);
 
 
     while (cA < steps && cB < steps)
@@ -98,8 +98,8 @@ void Motor::move_forward(float units)
         sleep_ms(10);
     }
 
-    gpio_put(MOTOR_ENABLE_A, 0);
-    gpio_put(MOTOR_ENABLE_B, 0);
+    gpio_put(MOTOR_A_PWM, 0);
+    gpio_put(MOTOR_B_PWM, 0);
 }
 
 
@@ -109,13 +109,13 @@ void Motor::turn_left(float units)
     int steps = static_cast<int>((units * STEPS_PER_UNIT) / 3.2);
     cA = cB = 0;
 
-    gpio_put(FORWARD_A, 0);
-    gpio_put(BACKWARD_A, 1);
-    gpio_put(FORWARD_B, 1);
-    gpio_put(BACKWARD_B, 0);
+    gpio_put(MOTOR_A_FRONT, 0);
+    gpio_put(MOTOR_A_BACK, 1);
+    gpio_put(MOTOR_B_FRONT, 1);
+    gpio_put(MOTOR_B_BACK, 0);
 
-    gpio_put(MOTOR_ENABLE_A, 1);
-    gpio_put(MOTOR_ENABLE_B, 1);
+    gpio_put(MOTOR_A_PWM, 1);
+    gpio_put(MOTOR_B_PWM, 1);
 
     while (cA < steps || cB < steps)
     {
@@ -126,14 +126,19 @@ void Motor::turn_left(float units)
         set_motor(0, left_speed, false);
     }
 
-    gpio_put(MOTOR_ENABLE_A, 0);
-    gpio_put(MOTOR_ENABLE_B, 0);
+    gpio_put(MOTOR_A_PWM, 0);
+    gpio_put(MOTOR_B_PWM, 0);
 }
 
 void Motor::turn_right(float units)
 {
     int steps = static_cast<int>((units * STEPS_PER_UNIT) / 3.2);
     cA = cB = 0;
+
+    gpio_put(MOTOR_A_FRONT, 1);
+    gpio_put(MOTOR_A_BACK, 0);
+    gpio_put(MOTOR_B_FRONT, 0);
+    gpio_put(MOTOR_B_BACK, 1);
 
     while (cA < steps || cB < steps)
     {
@@ -145,12 +150,15 @@ void Motor::turn_right(float units)
     }
 
     
-    gpio_put(MOTOR_ENABLE_A, 0);
-    gpio_put(MOTOR_ENABLE_B, 0);
+    gpio_put(MOTOR_A_PWM, 0);
+    gpio_put(MOTOR_B_PWM, 0);
 }
 
 void Motor::curved_turn(float radius, float angle, bool is_left_turn)
 {
+
+    
+    
     float angle_rad = angle * PI / 180.0;
     float inner_arc = radius * angle_rad;
     float outer_arc = (radius + WHEEL_BASE) * angle_rad;
@@ -159,6 +167,11 @@ void Motor::curved_turn(float radius, float angle, bool is_left_turn)
     int outer_steps = static_cast<int>(outer_arc * STEPS_PER_UNIT);
 
     cA = cB = 0;
+
+    gpio_put(MOTOR_A_FRONT, 1);
+    gpio_put(MOTOR_A_BACK, 0);
+    gpio_put(MOTOR_B_FRONT, 1);
+    gpio_put(MOTOR_B_BACK, 0);
 
     if (is_left_turn)
     {
