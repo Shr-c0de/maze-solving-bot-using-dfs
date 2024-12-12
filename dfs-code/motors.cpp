@@ -77,8 +77,8 @@ void Motor::init_encoders()
     gpio_set_dir(ENCODER_B, GPIO_IN);
     gpio_pull_up(ENCODER_B);
     
-    gpio_set_irq_enabled_with_callback(ENCODER_A, GPIO_IRQ_EDGE_RISE, true, &encoder_a_irq_handler);
-    gpio_set_irq_enabled_with_callback(ENCODER_B, GPIO_IRQ_EDGE_RISE, true, &encoder_b_irq_handler);
+    gpio_set_irq_enabled_with_callback(ENCODER_A, GPIO_IRQ_EDGE_RISE, true, &global_encoder_irq_handler);
+    gpio_set_irq_enabled_with_callback(ENCODER_B, GPIO_IRQ_EDGE_RISE, true, &global_encoder_irq_handler);
 }
 
 void Motor::move_forward(float units)
