@@ -39,23 +39,26 @@ int main(){
 
     Sensor S;
     Motor M;
-    i2c_scan();
-    sleep_ms(1000);
-    S.init();
-    printf("Program starts:\n\n");
-    i2c_scan();
 
-    int arr[4];
-    while (1)
-    {
+    M.move_forward(1);
+    
+    // i2c_scan();
+    // sleep_ms(1000);
+    // S.init();
+    // printf("Program starts:\n\n");
+    // i2c_scan();
 
-        S.readings(arr);
-        for (int i = 0; i < 4; i++)
-        {
-            printf("%d\n", arr[i]);
-        }
-        sleep_ms(1000);
-        i2c_scan();
-        M.move_forward(1);
-    }
+    // int arr[4];
+    // while (1)
+    // {
+
+    //     S.readings(arr);
+    //     for (int i = 0; i < 4; i++)
+    //     {
+    //         printf("%d\n", arr[i]);
+    //     }
+    //     sleep_ms(1000);
+    //     i2c_scan();
+    //     M.move_forward(1);
+    // }
 }

@@ -12,9 +12,6 @@
 #define WHEEL_BASE 15.0
 #define PI 3.1415
 
-volatile long cA = 0;
-volatile long cB = 0;
-
 #define ENCODER_A 14
 #define ENCODER_B 15
 class Motor
