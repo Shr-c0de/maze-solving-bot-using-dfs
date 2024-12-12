@@ -1,5 +1,10 @@
 #include "motors.h"
 
+#ifndef ENC_PIN
+    #define ENC_PIN
+    volatile long cA = 0;
+    volatile long cB = 0;
+#endif
 
 int Motor::calculate_pid_speed(int target, int current, float &error, float &prev_error, float &integral)
 {

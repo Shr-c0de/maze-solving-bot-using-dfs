@@ -25,7 +25,7 @@ public:
     const uint MOTOR_A_BACK = 19;
     const uint MOTOR_B_PWM = 17;
     const uint MOTOR_B_FRONT = 20;
-    const uint MOTOR_B_BACK= 21;
+    const uint MOTOR_B_BACK = 21;
 
     const int STEPS_PER_UNIT = static_cast<int>((RATIO * 32.0) / (WHEEL_DIAMETER * PI));
 
