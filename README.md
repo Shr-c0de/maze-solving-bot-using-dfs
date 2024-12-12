@@ -13,3 +13,6 @@ Sensors:\
 [   2,          3,           4,    5]\
 SCL : 9\
 SDA : 8\
+\
+Buzzer : 13\
+switch : 12\
