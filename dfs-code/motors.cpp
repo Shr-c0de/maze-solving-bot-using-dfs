@@ -69,6 +69,14 @@ void Motor::init_motor()
 
 void Motor::init_encoders()
 {
+    gpio_init(ENCODER_A);
+    gpio_set_dir(ENCODER_A, GPIO_IN);
+    gpio_pull_up(ENCODER_A);
+
+    gpio_init(ENCODER_B);
+    gpio_set_dir(ENCODER_B, GPIO_IN);
+    gpio_pull_up(ENCODER_B);
+    
     gpio_set_irq_enabled_with_callback(ENCODER_A, GPIO_IRQ_EDGE_RISE, true, &encoder_a_irq_handler);
     gpio_set_irq_enabled_with_callback(ENCODER_B, GPIO_IRQ_EDGE_RISE, true, &encoder_b_irq_handler);
 }
