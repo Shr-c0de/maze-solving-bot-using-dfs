@@ -15,13 +15,13 @@ int Motor::calculate_pid_speed(int target, int current, float &error, float &pre
 void Motor::set_motor(int motor, int speed, bool forward)
 {
      if (motor == 0) { // Motor A
-        gpio_put(MOTOR_A_FRONT, forward ? 1 : 0);
-        gpio_put(MOTOR_A_FRONT, forward ? 0 : 1);
-        pwm_set_gpio_level(MOTOR_A_PWM, speed);
+        gpio_put(Motor::FORWARD_A, forward ? 1 : 0);
+        gpio_put(Motor::BACKWARD_A, forward ? 0 : 1);
+        pwm_set_gpio_level(Motor::MOTOR_ENABLE_A, speed);
     } else if (motor == 1) { // Motor B
-        gpio_put(MOTOR_B_FRONT, forward ? 1 : 0);
-        gpio_put(MOTOR_B_BACK, forward ? 0 : 1);
-        pwm_set_gpio_level(MOTOR_B_PWM, speed);
+        gpio_put(Motor::FORWARD_B, forward ? 1 : 0);
+        gpio_put(Motor::BACKWARD_B, forward ? 0 : 1);
+        pwm_set_gpio_level(Motor::MOTOR_ENABLE_B, speed);
     }
 }
 
