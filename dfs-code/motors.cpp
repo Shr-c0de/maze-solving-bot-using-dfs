@@ -1,10 +1,17 @@
 #include "motors.h"
 
 #ifndef ENC_PIN
-    #define ENC_PIN
-    volatile long cA = 0;
-    volatile long cB = 0;
+#define ENC_PIN
+volatile long cA = 0;
+volatile long cB = 0;
 #endif
+
+void Motor::reinitvar()
+{
+    cA = cB = 0;
+    error_a = 0, prev_error_a = 0, integral_a = 0;
+    error_b = 0, prev_error_b = 0, integral_b = 0;
+}
 
 int Motor::calculate_pid_speed(int target, int current, float &error, float &prev_error, float &integral)
 {
@@ -19,27 +26,31 @@ int Motor::calculate_pid_speed(int target, int current, float &error, float &pre
 
 void Motor::set_motor(int motor, int speed, bool forward)
 {
-     if (motor == 0) { // Motor A
+    if (motor == 0)
+    { // Motor A
         gpio_put(Motor::MOTOR_A_FRONT, forward ? 1 : 0);
         gpio_put(Motor::MOTOR_A_BACK, forward ? 0 : 1);
         pwm_set_gpio_level(Motor::MOTOR_A_PWM, speed);
-    } else if (motor == 1) { // Motor B
+    }
+    else if (motor == 1)
+    { // Motor B
         gpio_put(Motor::MOTOR_B_FRONT, forward ? 1 : 0);
         gpio_put(Motor::MOTOR_B_BACK, forward ? 0 : 1);
         pwm_set_gpio_level(Motor::MOTOR_B_PWM, speed);
     }
 }
 
- void Motor::global_encoder_irq_handler(uint gpio, uint32_t events) {
-        if (gpio == ENCODER_A)
-        {
-            cA++;
-        } 
-        else if (gpio == ENCODER_B) 
-        {
-            cB++;
-        }
+void Motor::global_encoder_irq_handler(uint gpio, uint32_t events)
+{
+    if (gpio == ENCODER_A)
+    {
+        cA++;
     }
+    else if (gpio == ENCODER_B)
+    {
+        cB++;
+    }
+}
 
 Motor::Motor()
 {
@@ -52,7 +63,6 @@ void Motor::init_motor()
 
     gpio_set_function(MOTOR_A_PWM, GPIO_FUNC_PWM);
     gpio_set_function(MOTOR_B_PWM, GPIO_FUNC_PWM);
-
 
     gpio_init(MOTOR_A_FRONT);
     gpio_init(MOTOR_A_BACK);
@@ -81,13 +91,14 @@ void Motor::init_encoders()
     gpio_init(ENCODER_B);
     gpio_set_dir(ENCODER_B, GPIO_IN);
     gpio_pull_up(ENCODER_B);
-    
+
     gpio_set_irq_enabled_with_callback(ENCODER_A, GPIO_IRQ_EDGE_RISE, true, &global_encoder_irq_handler);
     gpio_set_irq_enabled_with_callback(ENCODER_B, GPIO_IRQ_EDGE_RISE, true, &global_encoder_irq_handler);
 }
 
 void Motor::move_forward(float units)
 {
+    reinitvar();
     int steps = static_cast<int>(units * STEPS_PER_UNIT);
     cA = cB = 0;
 
@@ -98,7 +109,6 @@ void Motor::move_forward(float units)
 
     gpio_put(MOTOR_A_PWM, 1);
     gpio_put(MOTOR_B_PWM, 1);
-
 
     while (cA < steps && cB < steps)
     {
@@ -115,10 +125,9 @@ void Motor::move_forward(float units)
     gpio_put(MOTOR_B_PWM, 0);
 }
 
-
-
 void Motor::turn_left(float units)
 {
+    reinitvar();
     int steps = static_cast<int>((units * STEPS_PER_UNIT) / 3.2);
     cA = cB = 0;
 
@@ -145,6 +154,8 @@ void Motor::turn_left(float units)
 
 void Motor::turn_right(float units)
 {
+    reinitvar();
+
     int steps = static_cast<int>((units * STEPS_PER_UNIT) / 3.2);
     cA = cB = 0;
 
@@ -162,16 +173,14 @@ void Motor::turn_right(float units)
         set_motor(1, right_speed, false);
     }
 
-    
     gpio_put(MOTOR_A_PWM, 0);
     gpio_put(MOTOR_B_PWM, 0);
 }
 
 void Motor::curved_turn(float radius, float angle, bool is_left_turn)
 {
+    reinitvar();
 
-    
-    
     float angle_rad = angle * PI / 180.0;
     float inner_arc = radius * angle_rad;
     float outer_arc = (radius + WHEEL_BASE) * angle_rad;
@@ -216,7 +225,6 @@ void Motor::curved_turn(float radius, float angle, bool is_left_turn)
     set_motor(0, 0, true);
     set_motor(1, 0, true);
 }
-
 
 int motor_example()
 {

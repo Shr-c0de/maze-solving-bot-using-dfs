@@ -28,7 +28,7 @@ public:
 
     uint slice_num_a, slice_num_b;
 
-    float kp = 1.0, ki = 0.0, kd = 0.0;
+    float kp = 0.6, ki = 0.0, kd = 0.5;
     float error_a = 0, prev_error_a = 0, integral_a = 0;
     float error_b = 0, prev_error_b = 0, integral_b = 0;
 
@@ -38,6 +38,7 @@ public:
     static void global_encoder_irq_handler(uint gpio, uint32_t events);
     Motor();
     void init_motor();
+    void reinitvar();
     void init_encoders();
     void move_forward(float units);
     void turn_left(float units);

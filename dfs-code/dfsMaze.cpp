@@ -28,9 +28,10 @@ void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
     pio->txf[sm] = (125000000 / (2 * freq)) - 3;
 }
 
-int main(){
+int main()
+{
     stdio_init_all();
-    sleep_ms(3000); //wait for stdio
+    sleep_ms(3000); // wait for stdio
 
     // blink, doesnt use cpu
     PIO pio = pio0;
@@ -39,9 +40,16 @@ int main(){
 
     Sensor S;
     Motor M;
+    while (1)
+    {
+        M.move_forward(1);
+        sleep_ms(2000);
+        M.turn_left(2);
+        sleep_ms(1000);
+        M.turn_right(2);
+        sleep_ms(1000);
+    }
 
-    M.move_forward(1);
-    
     // i2c_scan();
     // sleep_ms(1000);
     // S.init();
