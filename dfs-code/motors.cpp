@@ -146,8 +146,9 @@ void Motor::turn_left(float units)
     gpio_put(MOTOR_B_FRONT, 1);
     gpio_put(MOTOR_B_BACK, 0);
 
-    gpio_put(MOTOR_A_PWM, 1);
-    gpio_put(MOTOR_B_PWM, 1);
+    pwm_set_gpio_level(MOTOR_A_PWM, 255);
+    pwm_set_gpio_level(MOTOR_B_PWM, 255);
+
 
     while (cA < steps || cB < steps)
     {
@@ -158,8 +159,9 @@ void Motor::turn_left(float units)
         set_motor(0, left_speed, false);
     }
 
-    gpio_put(MOTOR_A_PWM, 0);
-    gpio_put(MOTOR_B_PWM, 0);
+  pwm_set_gpio_level(MOTOR_A_PWM, 0);
+  pwm_set_gpio_level(MOTOR_B_PWM, 0);
+
 
     gpio_put(MOTOR_A_FRONT, 0);
     gpio_put(MOTOR_A_BACK, 0);
@@ -179,6 +181,10 @@ void Motor::turn_right(float units)
     gpio_put(MOTOR_B_FRONT, 0);
     gpio_put(MOTOR_B_BACK, 1);
 
+    pwm_set_gpio_level(MOTOR_A_PWM, 255);
+    pwm_set_gpio_level(MOTOR_B_PWM, 255);
+
+
     while (cA < steps || cB < steps)
     {
         int left_speed = calculate_pid_speed(steps, cA, error_a, prev_error_a, integral_a);
@@ -188,8 +194,9 @@ void Motor::turn_right(float units)
         set_motor(1, right_speed, false);
     }
 
-    gpio_put(MOTOR_A_PWM, 0);
-    gpio_put(MOTOR_B_PWM, 0);
+   pwm_set_gpio_level(MOTOR_A_PWM, 0);
+   pwm_set_gpio_level(MOTOR_B_PWM, 0);
+
 
     gpio_put(MOTOR_A_FRONT, 0);
     gpio_put(MOTOR_A_BACK, 0);
