@@ -160,6 +160,11 @@ void Motor::turn_left(float units)
 
     gpio_put(MOTOR_A_PWM, 0);
     gpio_put(MOTOR_B_PWM, 0);
+
+    gpio_put(MOTOR_A_FRONT, 0);
+    gpio_put(MOTOR_A_BACK, 0);
+    gpio_put(MOTOR_B_FRONT, 0);
+    gpio_put(MOTOR_B_BACK, 0);
 }
 
 void Motor::turn_right(float units)
@@ -185,6 +190,11 @@ void Motor::turn_right(float units)
 
     gpio_put(MOTOR_A_PWM, 0);
     gpio_put(MOTOR_B_PWM, 0);
+
+    gpio_put(MOTOR_A_FRONT, 0);
+    gpio_put(MOTOR_A_BACK, 0);
+    gpio_put(MOTOR_B_FRONT, 0);
+    gpio_put(MOTOR_B_BACK, 0);
 }
 
 void Motor::curved_turn(float radius, float angle, bool is_left_turn)
@@ -234,6 +244,11 @@ void Motor::curved_turn(float radius, float angle, bool is_left_turn)
 
     set_motor(0, 0, true);
     set_motor(1, 0, true);
+
+    gpio_put(MOTOR_A_FRONT, 0);
+    gpio_put(MOTOR_A_BACK, 0);
+    gpio_put(MOTOR_B_FRONT, 0);
+    gpio_put(MOTOR_B_BACK, 0);
 }
 
 int motor_example()
