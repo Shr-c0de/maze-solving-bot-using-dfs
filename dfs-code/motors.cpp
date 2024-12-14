@@ -110,10 +110,15 @@ void Motor::move_forward(float units)
     gpio_put(MOTOR_A_PWM, 1);
     gpio_put(MOTOR_B_PWM, 1);
 
+   
+
     while (cA < steps && cB < steps)
     {
         int left_speed = calculate_pid_speed(steps, cA, error_a, prev_error_a, integral_a);
         int right_speed = calculate_pid_speed(steps, cB, error_b, prev_error_b, integral_b);
+
+        if(abs(steps - cA < 3)) left_speed = 0;
+        if(abs(steps - cB < 3)) right_speed = 0;
 
         set_motor(0, left_speed, true);
         set_motor(1, right_speed, true);
@@ -121,8 +126,13 @@ void Motor::move_forward(float units)
         sleep_ms(10);
     }
 
-    gpio_put(MOTOR_A_PWM, 0);
-    gpio_put(MOTOR_B_PWM, 0);
+    pwm_set_gpio_level(MOTOR_A_PWM, 0);
+    pwm_set_gpio_level(MOTOR_B_PWM, 0);
+
+    gpio_put(MOTOR_A_FRONT, 0);
+    gpio_put(MOTOR_A_BACK, 0);
+    gpio_put(MOTOR_B_FRONT, 0);
+    gpio_put(MOTOR_B_BACK, 0);
 }
 
 void Motor::turn_left(float units)
