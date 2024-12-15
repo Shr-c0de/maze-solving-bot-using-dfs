@@ -28,7 +28,7 @@ public:
 
     uint slice_num_a, slice_num_b;
 
-    float kp = 0.6, ki = 0.0, kd = 0.5;
+    const float kp = 0.3, ki = 0.0, kd = 0.6;
     float error_a = 0, prev_error_a = 0, integral_a = 0;
     float error_b = 0, prev_error_b = 0, integral_b = 0;
 

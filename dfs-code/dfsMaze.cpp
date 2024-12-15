@@ -31,18 +31,18 @@ void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
 int main()
 {
     stdio_init_all();
-    sleep_ms(3000); // wait for stdio
-
-    // blink, doesnt use cpu
     PIO pio = pio0;
     uint offset = pio_add_program(pio, &blink_program);
     blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 3);
+    sleep_ms(3000); // wait for stdio
+
+    // blink, doesnt use cpu
 
     Sensor S;
     Motor M;
     while (1)
     {
-        M.move_forward(1);
+        M.move_forward(10);
         sleep_ms(2000);
         M.turn_left(2);
         sleep_ms(1000);
