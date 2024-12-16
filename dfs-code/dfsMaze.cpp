@@ -42,11 +42,11 @@ int main()
     Motor M;
     while (1)
     {
-        M.move_forward(10);
+        M.move_forward(1);
         sleep_ms(2000);
-        M.turn_left(2);
+        M.turn_left(1);
         sleep_ms(1000);
-        M.turn_right(2);
+        M.turn_right(1);
         sleep_ms(1000);
     }
 

@@ -8,7 +8,7 @@
 #include <cmath>
 
 #define RATIO 530
-#define WHEEL_DIAMETER 4.4
+#define WHEEL_DIAMETER 4.3 //cm
 #define WHEEL_BASE 15.0
 #define PI 3.1415
 
