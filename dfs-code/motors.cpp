@@ -9,12 +9,18 @@ volatile long cB = 0;
 void Motor::reinitvar()
 {
     cA = cB = 0;
-    error_a = 0, prev_error_a = 0, integral_a = 0;
-    error_b = 0, prev_error_b = 0, integral_b = 0;
+     for (int i = 0; i < 2; ++i)
+    {
+        error[i] = 0;
+        prev_error[i] = 0;
+        integral[i] = 0;
+    }
 }
 
-int Motor::calculate_pid_speed(int target, int current, float &error, float &prev_error, float &integral)
+int Motor::calculate_pid_speed(int target, bool is_left, float &error, float &prev_error, float &integral)
 {
+     int current = is_left ? cA : cB;    
+    
     error = target - current;
     integral += error;
     float derivative = error - prev_error;
@@ -112,10 +118,10 @@ void Motor::move_forward(float units)
     pwm_set_gpio_level(MOTOR_B_PWM, 255);
    
 
-    while (cA < steps && cB < steps)
+    while (cA < steps || cB < steps)
     {
-        int left_speed = calculate_pid_speed(steps, cA, error_a, prev_error_a, integral_a);
-        int right_speed = calculate_pid_speed(steps, cB, error_b, prev_error_b, integral_b);
+        int left_speed = calculate_pid_speed(steps, true, error[0], prev_error[0], integral[0]);
+        int right_speed = calculate_pid_speed(steps, false, error[1], prev_error[1], integral[1]);
 
         if(abs(steps - cA) < 3) left_speed = 0;
         if(abs(steps - cB) < 3) right_speed = 0;
@@ -133,6 +139,9 @@ void Motor::move_forward(float units)
     gpio_put(MOTOR_A_BACK, 0);
     gpio_put(MOTOR_B_FRONT, 0);
     gpio_put(MOTOR_B_BACK, 0);
+
+    set_motor(0, 0, true);
+    set_motor(1, 0, true);
 }
 
 void Motor::turn_left(float units)
@@ -152,8 +161,8 @@ void Motor::turn_left(float units)
 
     while (cA < steps || cB < steps)
     {
-        int left_speed = calculate_pid_speed(steps, cA, error_a, prev_error_a, integral_a);
-        int right_speed = calculate_pid_speed(steps, cB, error_b, prev_error_b, integral_b);
+        int left_speed = calculate_pid_speed(steps, true, error[0], prev_error[0], integral[0])
+        int right_speed = calculate_pid_speed(steps, false, error[1], prev_error[1], integral[1]);
 
         set_motor(1, right_speed, true);
         set_motor(0, left_speed, false);
@@ -167,6 +176,9 @@ void Motor::turn_left(float units)
     gpio_put(MOTOR_A_BACK, 0);
     gpio_put(MOTOR_B_FRONT, 0);
     gpio_put(MOTOR_B_BACK, 0);
+
+    set_motor(0, 0, true);
+    set_motor(1, 0, false);
 }
 
 void Motor::turn_right(float units)
@@ -187,8 +199,8 @@ void Motor::turn_right(float units)
 
     while (cA < steps || cB < steps)
     {
-        int left_speed = calculate_pid_speed(steps, cA, error_a, prev_error_a, integral_a);
-        int right_speed = calculate_pid_speed(steps, cB, error_b, prev_error_b, integral_b);
+        int left_speed = calculate_pid_speed(steps, true, error[0], prev_error[0], integral[0]);
+        int right_speed = calculate_pid_speed(steps, false, error[1], prev_error[1], integral[1]);
 
         set_motor(0, left_speed, true);
         set_motor(1, right_speed, false);
@@ -202,6 +214,9 @@ void Motor::turn_right(float units)
     gpio_put(MOTOR_A_BACK, 0);
     gpio_put(MOTOR_B_FRONT, 0);
     gpio_put(MOTOR_B_BACK, 0);
+
+    set_motor(0,0, true);
+    set_motor(1, 0, false);
 }
 
 void Motor::curved_turn(float radius, float angle, bool is_left_turn)
@@ -222,12 +237,15 @@ void Motor::curved_turn(float radius, float angle, bool is_left_turn)
     gpio_put(MOTOR_B_FRONT, 1);
     gpio_put(MOTOR_B_BACK, 0);
 
+    pwm_set_gpio_level(MOTOR_A_PWM, 255);
+    pwm_set_gpio_level(MOTOR_B_PWM, 255);
+
     if (is_left_turn)
     {
         while (cA < inner_steps || cB < outer_steps)
         {
-            int inner_speed = calculate_pid_speed(inner_steps, cA, error_a, prev_error_a, integral_a);
-            int outer_speed = calculate_pid_speed(outer_steps, cB, error_b, prev_error_b, integral_b);
+            int inner_speed = calculate_pid_speed(inner_steps, true, error[0], prev_error[0], integral[0]);
+            int outer_speed = calculate_pid_speed(outer_steps, false, error[1], prev_error[1], integral[1]);
 
             set_motor(0, inner_speed, true);
             set_motor(1, outer_speed, true);
@@ -248,6 +266,9 @@ void Motor::curved_turn(float radius, float angle, bool is_left_turn)
             sleep_ms(10);
         }
     }
+
+    pwm_set_gpio_level(MOTOR_A_PWM, 0);
+    pwm_set_gpio_level(MOTOR_B_PWM, 0);
 
     set_motor(0, 0, true);
     set_motor(1, 0, true);
