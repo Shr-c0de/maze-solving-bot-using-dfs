@@ -161,7 +161,7 @@ void Motor::turn_left(float units)
 
     while (cA < steps || cB < steps)
     {
-        int left_speed = calculate_pid_speed(steps, true, error[0], prev_error[0], integral[0])
+        int left_speed = calculate_pid_speed(steps, true, error[0], prev_error[0], integral[0]);
         int right_speed = calculate_pid_speed(steps, false, error[1], prev_error[1], integral[1]);
 
         set_motor(1, right_speed, true);
