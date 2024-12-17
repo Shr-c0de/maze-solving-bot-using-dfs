@@ -257,8 +257,8 @@ void Motor::curved_turn(float radius, float angle, bool is_left_turn)
     {
         while (cA < outer_steps || cB < inner_steps)
         {
-            int outer_speed = calculate_pid_speed(outer_steps, cA, error_a, prev_error_a, integral_a);
-            int inner_speed = calculate_pid_speed(inner_steps, cB, error_b, prev_error_b, integral_b);
+            int outer_speed = calculate_pid_speed(outer_steps, cA, error[0], prev_error[0], integral[0]);
+            int inner_speed = calculate_pid_speed(inner_steps, cB, error[1], prev_error[1], integral[1]);
 
             set_motor(0, outer_speed, true);
             set_motor(1, inner_speed, true);
