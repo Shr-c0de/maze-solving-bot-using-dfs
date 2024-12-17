@@ -24,7 +24,7 @@ public:
     const uint MOTOR_B_FRONT = 20;
     const uint MOTOR_B_BACK = 21;
 
-    const int STEPS_PER_UNIT = static_cast<int>((RATIO * 32.0) / (WHEEL_DIAMETER * PI));
+    const int STEPS_PER_UNIT = ((RATIO * 32.0) / (WHEEL_DIAMETER * PI));
 
     uint slice_num_a, slice_num_b;
 
@@ -32,7 +32,7 @@ public:
     float error_a = 0, prev_error_a = 0, integral_a = 0;
     float error_b = 0, prev_error_b = 0, integral_b = 0;
 
-    int calculate_pid_speed(int target, int current, float &error, float &prev_error, float &integral);
+    int calculate_pid_speed(int target, bool is_left, float &error, float &prev_error, float &integral);
     void set_motor(int motor, int speed, bool forward);
 
     static void global_encoder_irq_handler(uint gpio, uint32_t events);
