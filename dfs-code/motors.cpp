@@ -14,20 +14,22 @@ void Motor::reinitvar()
         error[i] = 0;
         prev_error[i] = 0;
         integral[i] = 0;
+        speed[i] = 0;
     }
 }
 
-int Motor::calculate_pid_speed(int target, bool is_left, float &error, float &prev_error, float &integral)
+int Motor::calculate_pid_speed(int target, bool is_left)
 {
-     int current = is_left ? cA : cB;    
+     int current = is_left ? cA : cB;  
+     int index = is_left ? 0 : 1;
     
-    error = target - current;
-    integral += error;
-    float derivative = error - prev_error;
-    prev_error = error;
+    error[index] = target - current;
+    integral[index] += error[index];
+    float derivative = error[index] - prev_error[index];
+    prev_error[index] = error[index];
 
-    int speed = static_cast<int>(kp * error + ki * integral + kd * derivative);
-    return speed > 255 ? 255 : (speed < 0 ? 0 : speed);
+    int speed[index] = static_cast<int>(kp * error[index] + ki * integral[index] + kd * derivative);
+    return speed[index] > 255 ? 255 : (speed[index] < 0 ? 0 : speed[index]);
 }
 
 void Motor::set_motor(int motor, int speed, bool forward)
@@ -120,8 +122,8 @@ void Motor::move_forward(float units)
 
     while (cA < steps || cB < steps)
     {
-        int left_speed = calculate_pid_speed(steps, true, error[0], prev_error[0], integral[0]);
-        int right_speed = calculate_pid_speed(steps, false, error[1], prev_error[1], integral[1]);
+        int left_speed = calculate_pid_speed(steps, true);
+        int right_speed = calculate_pid_speed(steps, false);
 
         if(abs(steps - cA) < 3) left_speed = 0;
         if(abs(steps - cB) < 3) right_speed = 0;
@@ -161,8 +163,8 @@ void Motor::turn_left(float units)
 
     while (cA < steps || cB < steps)
     {
-        int left_speed = calculate_pid_speed(steps, true, error[0], prev_error[0], integral[0]);
-        int right_speed = calculate_pid_speed(steps, false, error[1], prev_error[1], integral[1]);
+        int left_speed = calculate_pid_speed(steps, true);
+        int right_speed = calculate_pid_speed(steps, false);
 
         set_motor(1, right_speed, true);
         set_motor(0, left_speed, false);
@@ -199,8 +201,8 @@ void Motor::turn_right(float units)
 
     while (cA < steps || cB < steps)
     {
-        int left_speed = calculate_pid_speed(steps, true, error[0], prev_error[0], integral[0]);
-        int right_speed = calculate_pid_speed(steps, false, error[1], prev_error[1], integral[1]);
+        int left_speed = calculate_pid_speed(steps, true);
+        int right_speed = calculate_pid_speed(steps, false);
 
         set_motor(0, left_speed, true);
         set_motor(1, right_speed, false);
@@ -244,8 +246,8 @@ void Motor::curved_turn(float radius, float angle, bool is_left_turn)
     {
         while (cA < inner_steps || cB < outer_steps)
         {
-            int inner_speed = calculate_pid_speed(inner_steps, true, error[0], prev_error[0], integral[0]);
-            int outer_speed = calculate_pid_speed(outer_steps, false, error[1], prev_error[1], integral[1]);
+            int inner_speed = calculate_pid_speed(inner_steps, true);
+            int outer_speed = calculate_pid_speed(outer_steps, false);
 
             set_motor(0, inner_speed, true);
             set_motor(1, outer_speed, true);
@@ -257,8 +259,8 @@ void Motor::curved_turn(float radius, float angle, bool is_left_turn)
     {
         while (cA < outer_steps || cB < inner_steps)
         {
-            int outer_speed = calculate_pid_speed(outer_steps, cA, error[0], prev_error[0], integral[0]);
-            int inner_speed = calculate_pid_speed(inner_steps, cB, error[1], prev_error[1], integral[1]);
+            int outer_speed = calculate_pid_speed(outer_steps, false);
+            int inner_speed = calculate_pid_speed(inner_steps, true);
 
             set_motor(0, outer_speed, true);
             set_motor(1, inner_speed, true);
