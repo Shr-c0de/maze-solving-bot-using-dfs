@@ -32,8 +32,9 @@ public:
     float error[2] = {0,0};
     float prev_error[2] = {0,0};
     float integral[2] = {0,0};
+    int speed[2] = {0, 0};
 
-    int calculate_pid_speed(int target, bool is_left, float &error, float &prev_error, float &integral);
+    int calculate_pid_speed(int target, bool is_left);
     void set_motor(int motor, int speed, bool forward);
 
     static void global_encoder_irq_handler(uint gpio, uint32_t events);
