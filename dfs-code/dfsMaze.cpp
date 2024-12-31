@@ -40,17 +40,6 @@ int main()
 
     Sensor S;
     Motor M;
-    // while (1)
-    // {
-    //     M.move_forward(1);
-    //     sleep_ms(1000);
-    //     M.turn(1, 0);
-    //     sleep_ms(1000);
-    //     M.move_forward(1);
-    //     sleep_ms(1000);
-    //     M.turn(1, 1);
-    //     sleep_ms(1000);
-    // }
 
     i2c_scan();
     sleep_ms(1000);

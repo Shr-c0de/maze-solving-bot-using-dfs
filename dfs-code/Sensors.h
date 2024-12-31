@@ -8,7 +8,7 @@
 #include "hardware/pio.h"
 // pico libraries
 
-//#include "blink.pio.h"
+// #include "blink.pio.h"
 #include "VL53L0X.h"
 
 #define I2C_PORT i2c0
@@ -27,6 +27,7 @@ private:
     void reboot(int i);
 
 public:
+    bool fixsensor();
     Sensor();
     void init();
     void readings(int *arr);
