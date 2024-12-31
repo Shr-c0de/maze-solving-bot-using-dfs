@@ -31,42 +31,44 @@ void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
 int main()
 {
     stdio_init_all();
+    int k = 0;
+    scanf("%d", &k);
     PIO pio = pio0;
     uint offset = pio_add_program(pio, &blink_program);
-    blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 3);
-    sleep_ms(3000); // wait for stdio
-
+    blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 1);
     // blink, doesnt use cpu
 
     Sensor S;
     Motor M;
-    while (1)
-    {
-        M.move_forward(1);
-        sleep_ms(2000);
-        M.turn_left(1);
-        sleep_ms(1000);
-        M.turn_right(1);
-        sleep_ms(1000);
-    }
-
-    // i2c_scan();
-    // sleep_ms(1000);
-    // S.init();
-    // printf("Program starts:\n\n");
-    // i2c_scan();
-
-    // int arr[4];
     // while (1)
     // {
-
-    //     S.readings(arr);
-    //     for (int i = 0; i < 4; i++)
-    //     {
-    //         printf("%d\n", arr[i]);
-    //     }
-    //     sleep_ms(1000);
-    //     i2c_scan();
     //     M.move_forward(1);
+    //     sleep_ms(1000);
+    //     M.turn(1, 0);
+    //     sleep_ms(1000);
+    //     M.move_forward(1);
+    //     sleep_ms(1000);
+    //     M.turn(1, 1);
+    //     sleep_ms(1000);
     // }
+
+    i2c_scan();
+    sleep_ms(1000);
+    S.init();
+    printf("Program starts:\n\n");
+    i2c_scan();
+
+    int arr[4];
+    while (1)
+    {
+
+        S.readings(arr);
+        for (int i = 0; i < 4; i++)
+        {
+            printf("%d\n", arr[i]);
+            sleep_ms(1);
+        }
+        sleep_ms(1000);
+        i2c_scan();
+    }
 }
