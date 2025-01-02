@@ -35,18 +35,10 @@ int Motor::calculate_pid_speed(int target, bool is_left)
         { // left motor is ahead
             speed[0] = speed[0]/2;
         }
-        else if (cB - cA >= THRESHOLD)
-        {
-            speed[0] += 50;
-        }
     }
     else // is right
     {
-        if (cA - cB >= THRESHOLD)
-        { // left motor is ahead
-            speed[1] += 50;
-        }
-        else if (cB - cA >= THRESHOLD)
+        if (cB - cA >= THRESHOLD)
         {
             speed[1] /= 2;
         }
@@ -73,14 +65,15 @@ void Motor::set_motor(int motor, int speed, bool forward)
 
 void Motor::global_encoder_irq_handler(uint gpio, uint32_t events)
 {
+    //printf("%d\n", gpio);
     if (gpio == ENCODER_A)
     {
-        printf("%d\n", cA);
+        //printf("%d %d\n", cA, cB);
         cA++;
     }
     else if (gpio == ENCODER_B)
     {
-        printf("%d\n", cB);
+        //printf("%d %d\n", cA, cB);
 
         cB++;
     }

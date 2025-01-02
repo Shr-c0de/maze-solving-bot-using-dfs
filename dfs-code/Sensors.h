@@ -21,7 +21,7 @@ void i2c_scan();
 class Sensor
 {
 private:
-    int xshut[4] = {2, 3, 4, 5};
+    int xshut[4] = {2, 3, 4, 5}; //left, left front, right front, right
     uint8_t addr[4] = {0x30, 0x31, 0x32, 0x33};
     VL53L0X s[4];
     void reboot(int i);

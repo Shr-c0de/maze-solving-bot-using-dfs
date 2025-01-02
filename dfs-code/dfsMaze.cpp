@@ -28,24 +28,20 @@ void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
     pio->txf[sm] = (125000000 / (2 * freq)) - 3;
 }
 
+Sensor S;
+char sensor_name[4][15] = {"left\t", "left front\t", "right front\t", "right\t"};
+
+Motor M;
+
 int main()
 {
     stdio_init_all();
-    int k = 0;
-    scanf("%d", &k);
+
+
     PIO pio = pio0;
     uint offset = pio_add_program(pio, &blink_program);
     blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 1);
     // blink, doesnt use cpu
-
-    Sensor S;
-    Motor M;
-
-    i2c_scan();
-    sleep_ms(1000);
-    S.init();
-    printf("Program starts:\n\n");
-    i2c_scan();
 
     int arr[4];
     while (1)
@@ -54,10 +50,14 @@ int main()
         S.readings(arr);
         for (int i = 0; i < 4; i++)
         {
-            printf("%d\n", arr[i]);
+            printf("%s- %d\n",sensor_name[i], arr[i]);
             sleep_ms(1);
         }
+        M.move_forward(1);
+        M.turn(2, 0);
+        M.move_forward(1);
+        M.turn(2, 1);
         sleep_ms(1000);
-        i2c_scan();
+        //i2c_scan();
     }
 }

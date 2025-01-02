@@ -1,4 +1,5 @@
 #include "Sensors.h"
+#include<string>
 
 bool reserved_addr(uint8_t addr)
 {
@@ -46,8 +47,6 @@ void i2c_scan()
 // if sensors give bad reading, we can reboot individually
 void Sensor::reboot(int i)
 {
-    gpio_init(xshut[i]);
-    gpio_set_dir(xshut[i], GPIO_OUT);
     gpio_put(xshut[i], 0);
     printf("Sensor %d setup\n", i + 1);
     gpio_put(xshut[i], 1);
@@ -57,7 +56,7 @@ void Sensor::reboot(int i)
     tmp.setTimeout(500);
     tmp.setMeasurementTimingBudget(70000);
     tmp.setSignalRateLimit(0.01);
-    tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 18);
+    tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 25);
     tmp.setAddress(addr[i]);
     s[i] = tmp;
     sleep_ms(50);
@@ -84,6 +83,7 @@ Sensor::Sensor()
         gpio_put(xshut[i], 0);
     }
     sleep_ms(100); // to stabilise
+    init();
 }
 
 // starts the sensors, gives each different addresses,
@@ -99,7 +99,7 @@ void Sensor::init()
         tmp.setTimeout(500);
         tmp.setMeasurementTimingBudget(70000);
         tmp.setSignalRateLimit(0.01);
-        tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 18);
+        tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 25);
         tmp.setAddress(addr[i]);
         s[i] = tmp;
         sleep_ms(50);
@@ -118,6 +118,7 @@ void Sensor::readings(int *arr)
         arr[i] = s[i].readRangeSingleMillimeters();
     }
 }
+
 
 int sensor_example()
 {
@@ -144,7 +145,7 @@ int sensor_example()
         S.readings(arr);
         for (int i = 0; i < 4; i++)
         {
-            printf("%d\n", arr[i]);
+            printf("%s- %d\n", sensor_example[i], arr[i]);
         }
         sleep_ms(1000);
         i2c_scan();
