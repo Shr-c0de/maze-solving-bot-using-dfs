@@ -30,7 +30,7 @@ prev_error[index] = error[index];
 integral[index] += error[index]; 
 
 
-speed[index] = (kp * error[index] + kd * derivative + ki * integral[index]) * MAX_PWM;
+speed[index] = (kp * error[index] + kd * derivative + ki * integral[index]) * 255;
 
 
 if (speed[index] < 50)
