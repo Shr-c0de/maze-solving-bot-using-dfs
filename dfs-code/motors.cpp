@@ -143,7 +143,7 @@ void Motor::move_forward(float units)
     
     reinitvar();
         printf("Forward target = %d\n", steps);
-    while (cA < steps || cB < steps)
+    while (cA < steps && cB < steps)
     {
         int left_speed = calculate_pid_speed(steps, true);
         int right_speed = calculate_pid_speed(steps, false);
