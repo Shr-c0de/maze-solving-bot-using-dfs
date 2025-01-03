@@ -169,9 +169,11 @@ void Motor::move_forward(float units)
 void Motor::turn(float units, int direction) // 90 degree increments
 {
 
-    int steps = units * RATIO * WHEEL_BASE / WHEEL_DIAMETER / 4;
+    int steps = static_cast<int>((angle * PI / 180.0) * (WHEEL_BASE / WHEEL_DIAMETER) * (RATIO / 2));
     printf("turn target = %d\n", steps);
 
+    reinitvar();
+    
     switch (direction)
     {
     case 0:
@@ -187,7 +189,7 @@ void Motor::turn(float units, int direction) // 90 degree increments
         gpio_put(MOTOR_B_BACK, 1);
     }
 
-    reinitvar();
+   
 
     while (cA < steps && cB < steps)
     {
@@ -197,6 +199,9 @@ void Motor::turn(float units, int direction) // 90 degree increments
         int right_speed = calculate_pid_speed(steps, 0);
         set_motor(1, right_speed, !direction);
     }
+
+    pwm_set_gpio_level(MOTOR_A_PWM, 0);
+    pwm_set_gpio_level(MOTOR_B_PWM, 0);
 
     //     while (cA < steps || cB < steps)
     //     {
