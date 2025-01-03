@@ -20,28 +20,37 @@ void Motor::reinitvar()
 
 int Motor::calculate_pid_speed(int target, bool is_left)
 {
-    int index = !is_left;
+   int index = !is_left;
 
-    error[index] = (target - (is_left ? cA : cB)) / (float)target; 
-    float derivative = error[index] - prev_error[index];
-    prev_error[index] = error[index];
-    integral[index] += error[index]; 
 
-    speed[index] = (kp * error[index] + kd * derivative + ki * integral[index]) * 255;
+int current_count = is_left ? cA : cB;
+error[index] = (target - current_count) / (float)target; 
+float derivative = error[index] - prev_error[index];
+prev_error[index] = error[index];
+integral[index] += error[index]; 
 
-    if (speed[index] < 50) 
-        speed[index] = 50;
-    if (speed[index] > 255) 
-        speed[index] = 255;
 
-    
-    if (is_left && cA - cB >= THRESHOLD) {
-        speed[0] *= 0.8; 
-    } else if (!is_left && cB - cA >= THRESHOLD) {
-        speed[1] *= 0.8;
+speed[index] = (kp * error[index] + kd * derivative + ki * integral[index]) * MAX_PWM;
+
+
+if (speed[index] < 50)
+    speed[index] = 50;
+
+
+if (speed[index] > 255)
+    speed[index] = 255;
+
+
+int deviation = cA - cB;
+if (abs(deviation) >= THRESHOLD) {
+    if (is_left && deviation > 0) { 
+        speed[0] *= 0.85; 
+    } else if (!is_left && deviation < 0) { 
+        speed[1] *= 0.85; 
     }
+}
 
-    return speed[index];
+return speed[index];
 }
 
 void Motor::set_motor(int motor, int speed, bool forward)
