@@ -189,7 +189,7 @@ void Motor::turn(float units, int direction) // 90 degree increments
 
     reinitvar();
 
-    while (cA < steps || cB < steps)
+    while (cA < steps && cB < steps)
     {
         int left_speed = calculate_pid_speed(steps, 1);
         set_motor(0, left_speed, direction);
