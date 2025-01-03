@@ -169,7 +169,8 @@ void Motor::move_forward(float units)
 void Motor::turn(float angle, int direction) // 90 degree increments
 {
 
-    int steps = static_cast<int>((angle * PI / 180.0) * (WHEEL_BASE / WHEEL_DIAMETER) * (RATIO / 2))/12;
+    float angle_rad = angle * PI / 180.0;
+    int steps = static_cast<int>((angle_rad * WHEEL_BASE / 2.0) * STEPS_PER_UNIT);
     printf("turn target = %d\n", steps);
 
     reinitvar();
