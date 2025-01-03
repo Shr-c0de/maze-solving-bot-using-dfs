@@ -22,29 +22,26 @@ int Motor::calculate_pid_speed(int target, bool is_left)
 {
     int index = !is_left;
 
-    error[index] = (target - (is_left ? cA : cB) ) / target; // getting error between 0 and 1
+    error[index] = (target - (is_left ? cA : cB)) / (float)target; 
     float derivative = error[index] - prev_error[index];
     prev_error[index] = error[index];
-    speed[index] = (kp * error[index] + kd * derivative + ki * integral[index])* 255;
+    integral[index] += error[index]; 
 
-    integral[index] += error[index];
+    speed[index] = (kp * error[index] + kd * derivative + ki * integral[index]) * 255;
 
-    if (is_left)
-    {
-        if (cA - cB >= THRESHOLD)
-        { // left motor is ahead
-            speed[0] = speed[0]/2;
-        }
-    }
-    else // is right
-    {
-        if (cB - cA >= THRESHOLD)
-        {
-            speed[1] /= 2;
-        }
+    if (speed[index] < 50) 
+        speed[index] = 50;
+    if (speed[index] > 255) 
+        speed[index] = 255;
+
+    
+    if (is_left && cA - cB >= THRESHOLD) {
+        speed[0] *= 0.8; 
+    } else if (!is_left && cB - cA >= THRESHOLD) {
+        speed[1] *= 0.8;
     }
 
-    return speed[index] > 255 ? 255 : (speed[index] < 0 ? 0 : speed[index]);
+    return speed[index];
 }
 
 void Motor::set_motor(int motor, int speed, bool forward)
