@@ -12,7 +12,7 @@ void Motor::reinitvar()
     for (int i = 0; i < 2; ++i)
     {
         error[i] = 0;
-        prev_error[i] = 1000;
+        prev_error[i] = 0;
         integral[i] = 0;
         speed[i] = 0;
     }
