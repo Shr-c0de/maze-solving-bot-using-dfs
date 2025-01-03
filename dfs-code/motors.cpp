@@ -166,7 +166,7 @@ void Motor::move_forward(float units)
     set_motor(1, 0, true);
 }
 
-void Motor::turn(float units, int direction) // 90 degree increments
+void Motor::turn(float angle, int direction) // 90 degree increments
 {
 
     int steps = static_cast<int>((angle * PI / 180.0) * (WHEEL_BASE / WHEEL_DIAMETER) * (RATIO / 2));
