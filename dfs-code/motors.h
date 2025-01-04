@@ -7,11 +7,11 @@
 #include "hardware/irq.h"
 #include <cmath>
 
-#define RATIO 551
+#define RATIO 150
 #define WHEEL_DIAMETER 4.3 // cm
-#define WHEEL_BASE 16.0
+#define WHEEL_BASE 15.6
 #define PI 3.1415
-#define THRESHOLD 10
+#define THRESHOLD 3
 
 #define ENCODER_A 0//14
 #define ENCODER_B 1//15
@@ -22,11 +22,12 @@ private:
 
     uint slice_num_a, slice_num_b;
 
-    const double kp = 0.5, ki = 0.08, kd = 0.2;
+    const double kp = 0.3, ki = 0.08, kd = 0.6;
     double error[2] = {0, 0};
     double prev_error[2] = {0, 0};
     double integral[2] = {0, 0};
     int speed[2] = {0, 0};
+
     const uint MOTOR_A_PWM = 16;
     const uint MOTOR_A_FRONT = 18;
     const uint MOTOR_A_BACK = 20;
@@ -40,15 +41,15 @@ private:
     void reinitvar();
 
     int calculate_pid_speed(int target, bool is_left);
-    void set_motor(int motor, int speed, bool forward);
+    void set_motor(int motor, int pwm);
 
     static void global_encoder_irq_handler(uint gpio, uint32_t events);
 
 public:
     // a->left, b->right
     Motor();
-    void move_forward(float units);
-    void turn(float units, int direction);
-    void curved_turn(float radius, float angle, bool is_left_turn);
+    void move_forward(double units);
+    void turn(double units, int direction);
+    void curved_turn(double radius, double angle, bool is_left_turn);
 };
 #endif

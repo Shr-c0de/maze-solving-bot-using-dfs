@@ -46,18 +46,10 @@ int main()
     int arr[4];
     while (1)
     {
-
-        S.readings(arr);
-        for (int i = 0; i < 4; i++)
-        {
-            printf("%s- %d\n",sensor_name[i], arr[i]);
-            sleep_ms(1);
-        }
-        M.move_forward(1);
         M.turn(2, 0);
-        M.move_forward(1);
+        sleep_ms(4000);
         M.turn(2, 1);
-        sleep_ms(1000);
+        sleep_ms(4000);
         //i2c_scan();
     }
 }
