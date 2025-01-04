@@ -149,6 +149,25 @@ void Motor::move_forward(float units)
         int left_pid = calculate_pid_speed(steps, true);
         int right_pid = calculate_pid_speed(steps, false);
 
+        static int prev_cA = 0, prev_cB = 0;
+        static int stuck_counter = 0;
+
+        if (cA == prev_cA && cB == prev_cB) {
+            stuck_counter++;
+        } else {
+            stuck_counter = 0; 
+        }
+
+        prev_cA = cA;
+        prev_cB = cB;
+
+        if (stuck_counter > 50) { 
+            printf("Motor is stuck! Stopping both motors.\n");
+            set_motor(0, 0, true);
+            set_motor(1, 0, true);
+            return;
+        }
+
          int deviation = abs(cA - cB);
 
         if (deviation >= THRESHOLD * 2) { 
