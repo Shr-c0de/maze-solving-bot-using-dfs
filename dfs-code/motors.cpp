@@ -30,7 +30,7 @@ prev_error[index] = error[index];
 integral[index] += error[index]; 
 
 
-pid_value = (kp * error[index] + kd * derivative + ki * integral[index]) * 255;
+float pid_value = (kp * error[index] + kd * derivative + ki * integral[index]) * 255;
 
 
 
@@ -47,7 +47,7 @@ if (abs(deviation) >= THRESHOLD) {
 return pid_value;
 }
 
-void Motor::set_motor(int motor, int speed, bool forward)
+void Motor::set_motor(int motor, int pid_output, bool forward)
 {
 
     bool actual_direction = pid_output >= 0 ? forward : !forward;
