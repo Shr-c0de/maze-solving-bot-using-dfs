@@ -46,10 +46,31 @@ int main()
     int arr[4];
     while (1)
     {
-        M.turn(2, 0);
-        sleep_ms(4000);
-        M.turn(2, 1);
-        sleep_ms(4000);
+        M.turn(1, 0);
+        sleep_ms(1000);
+        M.move_forward(1);
+        sleep_ms(1000);
+        M.turn(1, 1);
+        sleep_ms(1000);
+        M.move_forward(2);
+        sleep_ms(1000);
+        M.turn(1, 1);
+        sleep_ms(1000);
+        M.move_forward(2);
+        sleep_ms(1000);
+        M.turn(1, 0);
+        sleep_ms(1000);
+        M.move_forward(1);
+        sleep_ms(1000);
+        M.turn(1, 0);
+        sleep_ms(1000);
+        M.move_forward(1);
+        sleep_ms(1000);
+        M.turn(1, 1);
+        sleep_ms(1000);
+        M.move_forward(2);
+        sleep_ms(1000);
+        sleep_ms(1000);
         //i2c_scan();
     }
 }

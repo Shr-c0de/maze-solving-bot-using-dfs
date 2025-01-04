@@ -23,17 +23,17 @@ int Motor::calculate_pid_speed(int inval, bool is_left)
     int target = abs(inval);
     int index = !is_left;
 
-    int current_count = is_left ? cA : cB;
+    
 
-    error[index] = (double)((target - current_count) / (target / 100)); // value between 0-100
+    error[index] = (double)((target - current_count(is_left, cA, cB)) / (target / 100)); // value between 0-100
 
     double derivative = error[index] - prev_error[index];
 
-    double pid_value = (kp * error[index] + kd * derivative + ki * integral[index]);
+    double pid_value = (kp * error[index] + kd * derivative + ki * integral[index])/40;
 
-    printf("%d, %d\n", target, current_count);
+    printf("%d, %d\n", target, current_count(is_left, cA, cB));
 
-    prev_error[index] = error[index];
+    prev_error[index] = error[index];   
     integral[index] += error[index];
 
     int deviation = cA - cB;
@@ -46,29 +46,31 @@ int Motor::calculate_pid_speed(int inval, bool is_left)
         {
             if (deviation > 0)
             {
-                pid_value = 0;
+                pid_value /= 2;
             }
             else if (deviation < 0)
             {
-                pid_value += 50;
+                pid_value *= 2;
             }
         }
         else
         {
             if (deviation < 0)
             {
-                pid_value = 0;
+                pid_value /= 2;
             }
             else if (deviation > 0)
             {
-                pid_value += 50;
+                pid_value *= 2;
             }
         }
     }
 
-    printf("%d\n", target);
+    if(pid_value > 255) pid_value = 255;
 
-    return pid_value * (inval > 0 ? 1 : -1);
+    int x = pid_value * (inval > 0 ? 1 : -1);
+    printf("%d|| %d\n", target, x);
+    return x;
 }
 
 void Motor::set_motor(int motor, int pid)
@@ -96,7 +98,7 @@ void Motor::set_motor(int motor, int pid)
 
 void Motor::global_encoder_irq_handler(uint gpio, uint32_t events)
 {
-    printf("%d %d\n", cA, cB);
+    //printf("%d %d\n", cA, cB);
 
     if (gpio == ENCODER_A)
     {
@@ -170,7 +172,6 @@ void Motor::move_forward(double units)
         set_motor(0, left_pid);
         set_motor(1, right_pid);
 
-        sleep_ms(10);
     }
 
     set_motor(0, 0);
@@ -182,20 +183,20 @@ void Motor::move_forward(double units)
     gpio_put(MOTOR_B_BACK, 0);
 }
 
-void Motor::turn(double units, int isleft) // 90 degree increments
+void Motor::turn(double units, bool isleft) // 90 degree increments
 {
-    int steps = units * RATIO * WHEEL_BASE / WHEEL_DIAMETER / 4;
+    int steps = units * RATIO * (WHEEL_BASE / WHEEL_DIAMETER) / 4;
 
     printf("turn target = %d\n", steps);
 
     reinitvar();
 
-    while (cA < steps && cB < steps)
+    while (cA < steps || cB < steps)
     {
-        int left_speed = calculate_pid_speed((2 * isleft - 1) * steps, 1);
+        int left_speed = calculate_pid_speed((2 * isleft - 1) * steps - isleft*50, 1);
         set_motor(0, left_speed);
 
-        int right_speed = calculate_pid_speed((2 * (!isleft) - 1) * steps, 0);
+        int right_speed = calculate_pid_speed((2 * (!isleft) - 1) * steps - isleft*50, 0);
         set_motor(1, right_speed);
     }
 

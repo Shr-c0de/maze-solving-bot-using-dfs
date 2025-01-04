@@ -7,11 +7,12 @@
 #include "hardware/irq.h"
 #include <cmath>
 
+#define current_count(is_left, cA, cB) ((is_left) ? (cA) : (cB))
 #define RATIO 150
 #define WHEEL_DIAMETER 4.3 // cm
-#define WHEEL_BASE 15.6
+#define WHEEL_BASE 14.5
 #define PI 3.1415
-#define THRESHOLD 3
+#define THRESHOLD 1
 
 #define ENCODER_A 0//14
 #define ENCODER_B 1//15
@@ -22,7 +23,7 @@ private:
 
     uint slice_num_a, slice_num_b;
 
-    const double kp = 0.3, ki = 0.08, kd = 0.6;
+    const double kp = 0.25, ki = 0.009, kd = 0.2;
     double error[2] = {0, 0};
     double prev_error[2] = {0, 0};
     double integral[2] = {0, 0};
@@ -49,7 +50,7 @@ public:
     // a->left, b->right
     Motor();
     void move_forward(double units);
-    void turn(double units, int direction);
+    void turn(double units, bool direction);
     void curved_turn(double radius, double angle, bool is_left_turn);
 };
 #endif
