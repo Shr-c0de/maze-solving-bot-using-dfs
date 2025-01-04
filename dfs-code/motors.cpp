@@ -38,9 +38,9 @@ float pid_value = (kp * error[index] + kd * derivative + ki * integral[index]) *
 int deviation = cA - cB;
 if (abs(deviation) >= THRESHOLD) {
     if (is_left && deviation > 0) { 
-        pid_value *= 0.85; 
+        pid_value = 0; 
     } else if (!is_left && deviation < 0) { 
-        pid_value *= 0.85; 
+        pid_value = 0; 
     }
 }
 
