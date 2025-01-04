@@ -149,6 +149,17 @@ void Motor::move_forward(float units)
         int left_pid = calculate_pid_speed(steps, true);
         int right_pid = calculate_pid_speed(steps, false);
 
+         int deviation = abs(cA - cB);
+
+        if (deviation >= THRESHOLD * 2) { 
+        printf("Motor synchronization issue detected! Stopping motors.\n");
+            
+            set_motor(0, 0, true);
+            set_motor(1, 0, true);
+
+            return; 
+        }
+
         set_motor(0, left_pid, true);
         set_motor(1, right_pid, true);
 
@@ -162,6 +173,9 @@ void Motor::move_forward(float units)
     gpio_put(MOTOR_A_BACK, 0);
     gpio_put(MOTOR_B_FRONT, 0);
     gpio_put(MOTOR_B_BACK, 0);
+
+    set_motor(0, 0, true);
+    set_motor(1, 0, true);
 
   
 }
