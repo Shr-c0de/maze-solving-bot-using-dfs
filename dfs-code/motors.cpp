@@ -30,31 +30,36 @@ prev_error[index] = error[index];
 integral[index] += error[index]; 
 
 
-speed[index] = (kp * error[index] + kd * derivative + ki * integral[index]) * 255;
+pid_value = (kp * error[index] + kd * derivative + ki * integral[index]) * 255;
 
 
-if (speed[index] < 50)
-    speed[index] = 50;
-
-
-if (speed[index] > 255)
-    speed[index] = 255;
 
 
 int deviation = cA - cB;
 if (abs(deviation) >= THRESHOLD) {
     if (is_left && deviation > 0) { 
-        speed[0] *= 0.85; 
+        pid_value *= 0.85; 
     } else if (!is_left && deviation < 0) { 
-        speed[1] *= 0.85; 
+        pid_value *= 0.85; 
     }
 }
 
-return speed[index];
+return pid_value;
 }
 
 void Motor::set_motor(int motor, int speed, bool forward)
 {
+
+    bool actual_direction = pid_output >= 0 ? forward : !forward;
+    int speed = abs(pid_output);
+
+    
+    if (speed < 50)
+        speed = 50;
+    if (speed > 255)
+        speed = 255;
+
+    
     if (motor == 0)
     { // Motor A
         gpio_put(Motor::MOTOR_A_FRONT, forward ? 1 : 0);
@@ -133,23 +138,19 @@ void Motor::move_forward(float units)
 {
     int steps = (units * STEPS_PER_UNIT);
 
-    gpio_put(MOTOR_A_FRONT, 1);
-    gpio_put(MOTOR_A_BACK, 0);
-    gpio_put(MOTOR_B_FRONT, 1);
-    gpio_put(MOTOR_B_BACK, 0);
-
+   
     // pwm_set_gpio_level(MOTOR_A_PWM, 255);
     // pwm_set_gpio_level(MOTOR_B_PWM, 255);
     
     reinitvar();
         printf("Forward target = %d\n", steps);
-    while (cA < steps && cB < steps)
+    while (cA < steps || cB < steps)
     {
-        int left_speed = calculate_pid_speed(steps, true);
-        int right_speed = calculate_pid_speed(steps, false);
+        int left_pid = calculate_pid_speed(steps, true);
+        int right_pid = calculate_pid_speed(steps, false);
 
-        set_motor(0, left_speed, true);
-        set_motor(1, right_speed, true);
+        set_motor(0, left_pid, true);
+        set_motor(1, right_pid, true);
 
         sleep_ms(10);
     }
@@ -162,8 +163,7 @@ void Motor::move_forward(float units)
     gpio_put(MOTOR_B_FRONT, 0);
     gpio_put(MOTOR_B_BACK, 0);
 
-    set_motor(0, 0, true);
-    set_motor(1, 0, true);
+  
 }
 
 void Motor::turn(float units, int direction) // 90 degree increments
