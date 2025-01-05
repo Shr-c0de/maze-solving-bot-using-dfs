@@ -8,14 +8,14 @@
 #include <cmath>
 
 #define current_count(is_left, cA, cB) ((is_left) ? (cA) : (cB))
-#define RATIO 150
+#define RATIO 100
 #define WHEEL_DIAMETER 4.3 // cm
 #define WHEEL_BASE 14.5
 #define PI 3.1415
-#define THRESHOLD 1
+#define THRESHOLD 5
 
-#define ENCODER_A 0//14
-#define ENCODER_B 1//15
+#define ENCODER_A 0 // 14
+#define ENCODER_B 1 // 15
 class Motor
 {
 private:
@@ -23,7 +23,7 @@ private:
 
     uint slice_num_a, slice_num_b;
 
-    const double kp = 0.25, ki = 0.009, kd = 0.2;
+    const double kp = 0.7, ki = 0.2, kd = 0.5;
     double error[2] = {0, 0};
     double prev_error[2] = {0, 0};
     double integral[2] = {0, 0};
@@ -45,6 +45,8 @@ private:
     void set_motor(int motor, int pwm);
 
     static void global_encoder_irq_handler(uint gpio, uint32_t events);
+    static void global_encoder_irq_handler_neg(uint gpio, uint32_t events);
+    void valcheck(int &left, int &right);
 
 public:
     // a->left, b->right
