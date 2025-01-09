@@ -2,6 +2,8 @@
 #include <iostream>
 #include <vector>
 #include "pico/stdlib.h"
+#include "pico/multicore.h"
+
 #include "hardware/i2c.h"
 #include "hardware/pio.h"
 // pico libraries
@@ -31,10 +33,10 @@ void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
   pio->txf[sm] = (125000000 / (2 * freq)) - 3;
 }
 
+mutex_t mutex;
 Sensor S;
-char sensor_name[4][15] = {"left\t", "left front\t", "right front\t", "right\t"};
-
-Motor M;
+double distances[4];
+Motor M(distances);
 
 class Node
 {
@@ -208,6 +210,7 @@ public:
 
 char TurnLeft(char dir)
 {
+  M.turn(1, 0);
   if (dir == 'N')
     return 'W';
   if (dir == 'W')
@@ -219,6 +222,10 @@ char TurnLeft(char dir)
 
 char Uturn(char dir)
 {
+  M.turn(1, 0);
+  sleep_ms(100);
+  M.turn(1, 0);
+
   if (dir == 'N')
     return 'S';
   if (dir == 'W')
@@ -230,6 +237,7 @@ char Uturn(char dir)
 
 char TurnRight(char dir)
 {
+  M.turn(1, 1);
   if (dir == 'N')
     return 'E';
   if (dir == 'E')
@@ -241,6 +249,8 @@ char TurnRight(char dir)
 
 Node MoveForward(int &x, int &y, char direction)
 {
+  M.move_forward(1);
+
   if (direction == 'N')
     y++;
   else if (direction == 'S')
@@ -288,7 +298,21 @@ LinkedList visited;
 LinkedList nodes;
 
 char direction = 'N';
-double distances[4];
+
+//
+void core_1_func()
+{
+  while (1)
+  {
+    mutex_enter_blocking(&mutex);
+    S.readings(distances);
+    mutex_exit(&mutex);
+
+    sleep_ms(300);
+  }
+}
+
+//
 
 void DFS()
 {
@@ -299,6 +323,8 @@ void DFS()
   nodes.addEnd(start);
   int flag = 0;
 
+  int leftDistance, frontleft, frontright, rightDistance;
+
   while (true)
   {
 
@@ -308,21 +334,25 @@ void DFS()
     // path.printNodes();
     // nodes.printNodes();
 
-    S.readings(distances);
-
-    for(int i = 0; i < 4; i++) std::cout << (distances[i]) << " ";
+    for (int i = 0; i < 4; i++)
+      std::cout << (distances[i]) << " ";
     cout << endl;
 
     if (distances[0] == -1 && distances[1] == -1 && distances[2] == -1 && distances[3] == -1)
     {
-      // cout << "Solved!" << endl;
+      // buzzer
+      //  cout << "Solved!" << endl;
       break;
     }
 
-    int leftDistance = distances[0];
-    int frontleft = distances[1];
-    int frontright = distances[2];
-    int rightDistance = distances[3];
+    mutex_enter_blocking(&mutex);
+
+    leftDistance = distances[0];
+    frontleft = distances[1];
+    frontright = distances[2];
+    rightDistance = distances[3];
+
+    mutex_exit(&mutex);
 
     int frontDistance = frontdistance(frontleft, frontright);
 
@@ -384,7 +414,6 @@ void DFS()
       MoveForward(x, y, direction);
       path.addpathEnd(front_pos);
       visited.addEnd(front_pos);
-      M.move_forward(1);
 
       // cout << "Moving forward" << endl;
     }
@@ -393,8 +422,6 @@ void DFS()
     {
       flag = 1;
       direction = TurnLeft(direction);
-      M.turn(1, 1);
-
       // cout << "Turning Left" << endl;
     }
 
@@ -402,8 +429,6 @@ void DFS()
     {
       flag = 1;
       direction = TurnRight(direction);
-      M.turn(1, 0);
-
       // cout << "Turning Right" << endl;
     }
 
@@ -496,7 +521,6 @@ void DFS()
         {
           MoveForward(x, y, direction);
           path.removepathEnd();
-          M.move_forward(1);
 
           // cout << "Moving forward to the previous node" << endl;
         }
@@ -504,28 +528,20 @@ void DFS()
         else if (back_pos.equals(previousNode))
         {
           direction = Uturn(direction);
-          M.turn(2, 0);
-
           MoveForward(x, y, direction);
           path.removepathEnd();
-          M.move_forward(1);
-
           // cout << "Taking a U-turn and moving to previous node" << endl;
         }
 
         else if (left_pos.equals(previousNode))
         {
           direction = TurnLeft(direction);
-          M.turn(1, 1);
-
           // cout << "Turning Left" << endl;
         }
 
         else if (right_pos.equals(previousNode))
         {
           direction = TurnRight(direction);
-          M.turn(1, 0);
-
           // cout << "Turning Right" << endl;
         }
 
@@ -546,6 +562,9 @@ void DFS()
 int main()
 {
   stdio_init_all();
+  mutex_init(&mutex);
+  multicore_reset_core1();
+  multicore_launch_core1(core_1_func);
 
   PIO pio = pio0;
   uint offset = pio_add_program(pio, &blink_program);

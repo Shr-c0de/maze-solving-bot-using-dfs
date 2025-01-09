@@ -113,11 +113,11 @@ void Sensor::readings(double *arr)
         fixsensor();
     for (int i = 0; i < 4; i++)
     {
-        arr[i] = s[i].readRangeSingleMillimeters()/10.0;
+        arr[i] = s[i].readRangeSingleMillimeters() / 10.0;
 
         if (arr[i] == 65535 || arr[i] == 8191)
         {
-            //buzzer on
+            // buzzer on
 
             for (int i = 0; i < 4; i++)
             {
@@ -132,6 +132,8 @@ void Sensor::readings(double *arr)
         }
     }
 }
+
+
 
 int sensor_example()
 {

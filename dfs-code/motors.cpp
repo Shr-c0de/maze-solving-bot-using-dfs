@@ -114,8 +114,9 @@ void Motor::global_encoder_irq_handler_neg(uint gpio, uint32_t events)
     }
 }
 
-Motor::Motor()
+Motor::Motor(double d[])
 {
+    distances = d;
     Motor::init_motor();
     Motor::init_encoders();
 }
@@ -205,17 +206,14 @@ void Motor::turn(double units, bool isleft) // 90 degree increments
     // {
     //     gpio_set_irq_enabled_with_callback(ENCODER_A, GPIO_IRQ_EDGE_RISE, true, &global_encoder_irq_handler_neg);
     //     gpio_set_irq_enabled_with_callback(ENCODER_B, GPIO_IRQ_EDGE_RISE, true, &global_encoder_irq_handler_neg);
-
     //     while (cA > steps + THRESHOLD || cB > steps + THRESHOLD)
     //     {
     //         int left_speed = calculate_pid_speed((2 * !isleft - 1) * steps, 1);
     //         int right_speed = calculate_pid_speed((2 * (isleft) - 1) * steps, 0);
     //         //printf("speeds: %d\t%d\n", left_speed, right_speed);
-
     //         set_motor(0, left_speed);
     //         set_motor(1, right_speed);
     //     }
-
     //     gpio_set_irq_enabled_with_callback(ENCODER_A, GPIO_IRQ_EDGE_RISE, true, &global_encoder_irq_handler);
     //     gpio_set_irq_enabled_with_callback(ENCODER_B, GPIO_IRQ_EDGE_RISE, true, &global_encoder_irq_handler);
     // }
@@ -287,19 +285,19 @@ void Motor::curved_turn(double radius, double angle, bool is_left_turn)
     // gpio_put(MOTOR_B_BACK, 0);
 }
 
-int motor_example()
-{
-    Motor motor;
+// int motor_example()
+// {
+//     Motor motor;
 
-    motor.move_forward(1.0);
-    sleep_ms(1000);
-    // motor.turn_left(1.0);
-    // sleep_ms(1000);
-    // motor.turn_right(1.0);
-    // sleep_ms(1000);
-    motor.curved_turn(10.0, 90.0, true);
-    sleep_ms(1000);
-    motor.curved_turn(10.0, 90.0, false);
+//     motor.move_forward(1.0);
+//     sleep_ms(1000);
+//     // motor.turn_left(1.0);
+//     // sleep_ms(1000);
+//     // motor.turn_right(1.0);
+//     // sleep_ms(1000);
+//     motor.curved_turn(10.0, 90.0, true);
+//     sleep_ms(1000);
+//     motor.curved_turn(10.0, 90.0, false);
 
-    return 0;
-}
+//     return 0;
+// }

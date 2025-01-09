@@ -19,6 +19,9 @@
 class Motor
 {
 private:
+
+    double* distances;
+
     const int STEPS_PER_UNIT = (RATIO / WHEEL_DIAMETER / PI) * 32.0;
 
     uint slice_num_a, slice_num_b;
@@ -50,7 +53,7 @@ private:
 
 public:
     // a->left, b->right
-    Motor();
+    Motor(double d[]);
     void move_forward(double units);
     void turn(double units, bool direction);
     void curved_turn(double radius, double angle, bool is_left_turn);
