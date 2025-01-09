@@ -30,7 +30,7 @@ public:
     bool fixsensor();
     Sensor();
     void init();
-    void readings(int *arr);
+    void readings(double *arr);
 };
 
 #endif

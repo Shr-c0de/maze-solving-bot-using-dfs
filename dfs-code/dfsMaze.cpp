@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include<iostream>
+#include <iostream>
 #include <vector>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
@@ -21,22 +21,20 @@ using namespace std;
 
 void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
 {
-    blink_program_init(pio, sm, offset, pin);
-    pio_sm_set_enabled(pio, sm, true);
+  blink_program_init(pio, sm, offset, pin);
+  pio_sm_set_enabled(pio, sm, true);
 
-    printf("Blinking pin %d at %d Hz\n", pin, freq);
+  printf("Blinking pin %d at %d Hz\n", pin, freq);
 
-    // PIO counter program takes 3 more cycles in total than we pass as
-    // input (wait for n + 1; mov; jmp)
-    pio->txf[sm] = (125000000 / (2 * freq)) - 3;
+  // PIO counter program takes 3 more cycles in total than we pass as
+  // input (wait for n + 1; mov; jmp)
+  pio->txf[sm] = (125000000 / (2 * freq)) - 3;
 }
 
 Sensor S;
 char sensor_name[4][15] = {"left\t", "left front\t", "right front\t", "right\t"};
 
 Motor M;
-
-
 
 class Node
 {
@@ -280,8 +278,9 @@ int checknodes(int frontdistance, int leftdistance, int rightdistance)
 }
 
 // Left to define
-int frontdistance(int front1Distance, int front2Distance){
-    return 0;
+int frontdistance(int front1Distance, int front2Distance)
+{
+  return max(front1Distance, front2Distance);
 }
 
 LinkedList path;
@@ -289,7 +288,7 @@ LinkedList visited;
 LinkedList nodes;
 
 char direction = 'N';
-int distances[4];
+double distances[4];
 
 void DFS()
 {
@@ -311,14 +310,8 @@ void DFS()
 
     S.readings(distances);
 
-    // cout << "Enter front1 distance: ";
-    // cin >> distances[0];
-    // cout << "Enter front2 distance: ";
-    // cin >> distances[1];
-    // cout << "Enter left distance: ";
-    // cin >> distances[2];
-    // cout << "Enter right distance: ";
-    // cin >> distances[3];
+    for(int i = 0; i < 4; i++) std::cout << (distances[i]) << " ";
+    cout << endl;
 
     if (distances[0] == -1 && distances[1] == -1 && distances[2] == -1 && distances[3] == -1)
     {
@@ -327,11 +320,11 @@ void DFS()
     }
 
     int leftDistance = distances[0];
-    int front1Distance = distances[1];
-    int front2Distance = distances[2];
+    int frontleft = distances[1];
+    int frontright = distances[2];
     int rightDistance = distances[3];
 
-    int frontDistance = frontdistance (front1Distance,front2Distance);
+    int frontDistance = frontdistance(frontleft, frontright);
 
     Node front_pos(x, y);
     if (direction == 'N')
@@ -398,18 +391,18 @@ void DFS()
 
     else if (leftDistance > 15 && !visited.contains(left_pos))
     {
-        flag = 1;
-        direction = TurnLeft(direction);
-        M.turn(1,1); 
+      flag = 1;
+      direction = TurnLeft(direction);
+      M.turn(1, 1);
 
-        // cout << "Turning Left" << endl;
+      // cout << "Turning Left" << endl;
     }
 
     else if (rightDistance > 15 && !visited.contains(right_pos))
     {
       flag = 1;
       direction = TurnRight(direction);
-      M.turn(1,0);
+      M.turn(1, 0);
 
       // cout << "Turning Right" << endl;
     }
@@ -511,7 +504,7 @@ void DFS()
         else if (back_pos.equals(previousNode))
         {
           direction = Uturn(direction);
-          M.turn(2,0);
+          M.turn(2, 0);
 
           MoveForward(x, y, direction);
           path.removepathEnd();
@@ -523,7 +516,7 @@ void DFS()
         else if (left_pos.equals(previousNode))
         {
           direction = TurnLeft(direction);
-          M.turn(1,1);
+          M.turn(1, 1);
 
           // cout << "Turning Left" << endl;
         }
@@ -531,12 +524,12 @@ void DFS()
         else if (right_pos.equals(previousNode))
         {
           direction = TurnRight(direction);
-          M.turn(1,0);
+          M.turn(1, 0);
 
           // cout << "Turning Right" << endl;
         }
-        
-        else // Buzzer 
+
+        else // Buzzer
         {
           // cout << "Error in backtracking\n";
         }
@@ -550,16 +543,22 @@ void DFS()
   }
 }
 
-
 int main()
 {
-    stdio_init_all();
+  stdio_init_all();
 
-    PIO pio = pio0;
-    uint offset = pio_add_program(pio, &blink_program);
-    blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 1);
-    // blink, doesnt use cpu
+  PIO pio = pio0;
+  uint offset = pio_add_program(pio, &blink_program);
+  blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 1);
+  // blink, doesnt use cpu
 
-    DFS();
-    
+  int arr[4] = {0, 0, 0, 0};
+  // while (1)
+  // {
+  //   S.readings(arr);
+  //   printf("%d-%d-%d-%d\n", arr[0], arr[1], arr[2], arr[3]);
+  // }
+  DFS();
 }
+
+// infinity - 8190

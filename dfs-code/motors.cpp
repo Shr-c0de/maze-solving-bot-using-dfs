@@ -24,13 +24,13 @@ void Motor::valcheck(int &left, int &right)
     {
         if (left > 0)
             left = 0;
-        if (right < 255)
-            right = 255;
+        if (right < 100)
+            right = 100;
     }
     else if (cB - cA > THRESHOLD)
     {
-        if (left < 255)
-            left = 255;
+        if (left < 100)
+            left = 100;
         if (right > 0)
             right = 0;
     }
@@ -46,14 +46,14 @@ int Motor::calculate_pid_speed(int inval, bool is_left)
 
     double derivative = error[index] - prev_error[index];
 
-    int pid_value = (kp * error[index] + kd * derivative + ki * integral[index]) / 40.0;
+    int pid_value = (kp * error[index] + kd * derivative + ki * integral[index]) / 60.0;
 
     // //printf("Target: %d, Current: %d\n", target, current_count(is_left, cA, cB));
 
     prev_error[index] = error[index];
     integral[index] += error[index];
 
-    pid_value = (pid_value > 255) ? 255 : pid_value;
+    pid_value = (pid_value > 100) ? 100 : pid_value;
 
     int final_speed = (pid_value) * (direction);
 
@@ -65,9 +65,6 @@ void Motor::set_motor(int motor, int pid)
     bool forward = (pid >= 0);
 
     int speed = abs(pid);
-
-    if (speed > 255)
-        speed = 255;
 
     if (motor == 0)
     { // Motor A
@@ -141,8 +138,8 @@ void Motor::init_motor()
     slice_num_a = pwm_gpio_to_slice_num(MOTOR_A_PWM);
     slice_num_b = pwm_gpio_to_slice_num(MOTOR_B_PWM);
 
-    pwm_set_wrap(slice_num_a, 255);
-    pwm_set_wrap(slice_num_b, 255);
+    pwm_set_wrap(slice_num_a, 300);
+    pwm_set_wrap(slice_num_b, 300);
     pwm_set_enabled(slice_num_a, true);
     pwm_set_enabled(slice_num_b, true);
 }
@@ -188,9 +185,9 @@ void Motor::move_forward(double units)
 
 void Motor::turn(double units, bool isleft) // 90 degree increments
 {
-    int steps = units * RATIO * (WHEEL_BASE / WHEEL_DIAMETER) / 4 + isleft*10;
+    int steps = units * RATIO * (WHEEL_BASE / WHEEL_DIAMETER) / 4 + isleft * 10;
     reinitvar();
-    printf("%d\n", steps);
+    //printf("%d\n", steps);
 
     while (cA < steps || cB < steps)
     {
@@ -198,7 +195,7 @@ void Motor::turn(double units, bool isleft) // 90 degree increments
         int right_speed = calculate_pid_speed((2 * (!isleft) - 1) * steps, 0) / 1.5;
         valcheck(left_speed, right_speed);
 
-        printf("Left PID : %d: %d\nRight PID: %d, %d\n\n", left_speed, cA, right_speed, cB);
+        //printf("Left PID : %d: %d\nRight PID: %d, %d\n\n", left_speed, cA, right_speed, cB);
 
         set_motor(0, left_speed);
         set_motor(1, right_speed);
@@ -230,6 +227,7 @@ void Motor::turn(double units, bool isleft) // 90 degree increments
     gpio_put(MOTOR_A_BACK, 0);
     gpio_put(MOTOR_B_FRONT, 0);
     gpio_put(MOTOR_B_BACK, 0);
+    sleep_ms(500);
 }
 
 void Motor::curved_turn(double radius, double angle, bool is_left_turn)

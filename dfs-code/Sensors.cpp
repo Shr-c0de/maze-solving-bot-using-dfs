@@ -1,5 +1,4 @@
 #include "Sensors.h"
-#include<string>
 
 bool reserved_addr(uint8_t addr)
 {
@@ -65,22 +64,21 @@ void Sensor::reboot(int i)
 // initialises all sensors, switches them all off.
 Sensor::Sensor()
 {
-#ifndef i2c_begin
-#define i2c_begin
     i2c_init(I2C_PORT, 400 * 1000);
 
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
- 
+
     gpio_pull_up(I2C_SDA);
     gpio_pull_up(I2C_SCL);
-#endif
+
     // switching off all sensors, so we can initialise them one-by-one in init()
     for (int i = 0; i < 4; i++)
     {
         gpio_init(xshut[i]);
         gpio_set_dir(xshut[i], GPIO_OUT);
         gpio_put(xshut[i], 0);
+        gpio_pull_up(xshut[i]);
     }
     sleep_ms(100); // to stabilise
     init();
@@ -108,17 +106,32 @@ void Sensor::init()
 }
 
 // get readings
-void Sensor::readings(int *arr)
+void Sensor::readings(double *arr)
 {
     uint8_t rxdata;
     if (i2c_read_blocking(i2c_default, 0x29, &rxdata, 1, false) >= 0)
         fixsensor();
     for (int i = 0; i < 4; i++)
     {
-        arr[i] = s[i].readRangeSingleMillimeters();
+        arr[i] = s[i].readRangeSingleMillimeters()/10.0;
+
+        if (arr[i] == 65535 || arr[i] == 8191)
+        {
+            //buzzer on
+
+            for (int i = 0; i < 4; i++)
+            {
+                gpio_init(xshut[i]);
+                gpio_set_dir(xshut[i], GPIO_OUT);
+                gpio_put(xshut[i], 0);
+                gpio_pull_up(xshut[i]);
+            }
+            sleep_ms(1000); // to stabilise
+            init();
+            i--;
+        }
     }
 }
-
 
 int sensor_example()
 {
@@ -138,7 +151,7 @@ int sensor_example()
     printf("Program starts:\n\n");
     i2c_scan();
 
-    int arr[4];
+    double arr[4];
     while (1)
     {
 
