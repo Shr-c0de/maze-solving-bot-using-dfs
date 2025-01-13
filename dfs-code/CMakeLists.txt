@@ -39,6 +39,7 @@ add_executable(dfsMaze VL53L0X.cpp motors.cpp Sensors.cpp dfsMaze.cpp)
 target_link_libraries(dfsMaze
         pico_stdlib
         pico_multicore
+        #pico_math
         hardware_i2c
         hardware_pwm
         hardware_pio

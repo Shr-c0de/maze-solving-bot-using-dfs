@@ -114,9 +114,9 @@ void Motor::global_encoder_irq_handler_neg(uint gpio, uint32_t events)
     }
 }
 
-Motor::Motor(double d[])
-{
-    distances = d;
+Motor::Motor(Sensor &sensor)
+{   
+    s = &sensor;
     Motor::init_motor();
     Motor::init_encoders();
 }
@@ -168,10 +168,25 @@ void Motor::move_forward(double units)
 
     while (cA < steps || cB < steps)
     {
+        s->readings(distances);
         int left_pid = calculate_pid_speed(steps, true);
         int right_pid = calculate_pid_speed(steps, false);
         valcheck(left_pid, right_pid);
-        // printf("speeds: %d\t%d\n", left_pid, right_pid);
+
+        // left/right checking code:
+        int left = distances[0], right = distances[3];
+        if (left > 8 && left < 30 || right < 4)
+        {
+            right_pid += 15;
+            left_pid -= 15;
+        }
+        if (right > 8 && right < 30 || left < 4)
+        {
+            right_pid -= 15;
+            left_pid += 15;
+        }
+        // code end
+        //printf("PID values: %d %d \n", left_pid, right_pid);
         set_motor(0, left_pid);
         set_motor(1, right_pid);
     }
@@ -188,7 +203,7 @@ void Motor::turn(double units, bool isleft) // 90 degree increments
 {
     int steps = units * RATIO * (WHEEL_BASE / WHEEL_DIAMETER) / 4 + isleft * 10;
     reinitvar();
-    //printf("%d\n", steps);
+    // printf("%d\n", steps);
 
     while (cA < steps || cB < steps)
     {
@@ -196,7 +211,7 @@ void Motor::turn(double units, bool isleft) // 90 degree increments
         int right_speed = calculate_pid_speed((2 * (!isleft) - 1) * steps, 0) / 1.5;
         valcheck(left_speed, right_speed);
 
-        //printf("Left PID : %d: %d\nRight PID: %d, %d\n\n", left_speed, cA, right_speed, cB);
+        // printf("Left PID : %d: %d\nRight PID: %d, %d\n\n", left_speed, cA, right_speed, cB);
 
         set_motor(0, left_speed);
         set_motor(1, right_speed);

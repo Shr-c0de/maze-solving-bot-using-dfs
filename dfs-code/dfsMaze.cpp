@@ -3,7 +3,7 @@
 #include <vector>
 #include "pico/stdlib.h"
 #include "pico/multicore.h"
-
+// #include "pico/math.h"
 #include "hardware/i2c.h"
 #include "hardware/pio.h"
 // pico libraries
@@ -36,7 +36,7 @@ void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
 mutex_t mutex;
 Sensor S;
 double distances[4];
-Motor M(distances);
+Motor M(S);
 
 class Node
 {
@@ -266,15 +266,15 @@ Node MoveForward(int &x, int &y, char direction)
 int checknodes(int frontdistance, int leftdistance, int rightdistance)
 {
   int count = 0;
-  if (frontdistance > 15)
+  if (frontdistance > 25)
   {
     count++;
   }
-  if (leftdistance > 15)
+  if (leftdistance > 25)
   {
     count++;
   }
-  if (rightdistance > 15)
+  if (rightdistance > 25)
   {
     count++;
   }
@@ -300,17 +300,6 @@ LinkedList nodes;
 char direction = 'N';
 
 //
-void core_1_func()
-{
-  while (1)
-  {
-    mutex_enter_blocking(&mutex);
-    S.readings(distances);
-    mutex_exit(&mutex);
-
-    sleep_ms(300);
-  }
-}
 
 //
 
@@ -324,6 +313,7 @@ void DFS()
   int flag = 0;
 
   int leftDistance, frontleft, frontright, rightDistance;
+  sleep_ms(2000);
 
   while (true)
   {
@@ -338,21 +328,15 @@ void DFS()
       std::cout << (distances[i]) << " ";
     cout << endl;
 
-    if (distances[0] == -1 && distances[1] == -1 && distances[2] == -1 && distances[3] == -1)
-    {
-      // buzzer
-      //  cout << "Solved!" << endl;
-      break;
-    }
-
-    mutex_enter_blocking(&mutex);
-
+    //mutex_enter_blocking(&mutex);
+    S.readings(distances);
+    
     leftDistance = distances[0];
     frontleft = distances[1];
     frontright = distances[2];
     rightDistance = distances[3];
 
-    mutex_exit(&mutex);
+    //mutex_exit(&mu//tex);
 
     int frontDistance = frontdistance(frontleft, frontright);
 
@@ -408,7 +392,7 @@ void DFS()
       }
     }
 
-    if (frontDistance > 15 && !visited.contains(front_pos))
+    if (frontDistance > 30 && !visited.contains(front_pos))
     {
       flag = 0;
       MoveForward(x, y, direction);
@@ -418,14 +402,14 @@ void DFS()
       // cout << "Moving forward" << endl;
     }
 
-    else if (leftDistance > 15 && !visited.contains(left_pos))
+    else if (leftDistance > 30 && !visited.contains(left_pos))
     {
       flag = 1;
       direction = TurnLeft(direction);
       // cout << "Turning Left" << endl;
     }
 
-    else if (rightDistance > 15 && !visited.contains(right_pos))
+    else if (rightDistance > 30 && !visited.contains(right_pos))
     {
       flag = 1;
       direction = TurnRight(direction);
@@ -563,21 +547,31 @@ int main()
 {
   stdio_init_all();
   mutex_init(&mutex);
-  multicore_reset_core1();
-  multicore_launch_core1(core_1_func);
 
   PIO pio = pio0;
   uint offset = pio_add_program(pio, &blink_program);
   blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 1);
-  // blink, doesnt use cpu
 
-  int arr[4] = {0, 0, 0, 0};
+  // multicore_reset_core1();
+  // multicore_launch_core1(core_1_func);
+
+  // blink, doesnt use cpu
   // while (1)
   // {
-  //   S.readings(arr);
-  //   printf("%d-%d-%d-%d\n", arr[0], arr[1], arr[2], arr[3]);
+  //   printf("%f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
+  //   sleep_ms(200);
   // }
+  
   DFS();
+
+  
+
+  // int arr[4] = {0, 0, 0, 0};
+  //  while (1)
+  //  {
+  //    S.readings(arr);
+  //    printf("%d-%d-%d-%d\n", arr[0], arr[1], arr[2], arr[3]);
+  //  }
 }
 
 // infinity - 8190

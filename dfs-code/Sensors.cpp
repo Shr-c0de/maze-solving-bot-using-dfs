@@ -49,14 +49,15 @@ void Sensor::reboot(int i)
     gpio_put(xshut[i], 0);
     printf("Sensor %d setup\n", i + 1);
     gpio_put(xshut[i], 1);
-    sleep_ms(50);
+    sleep_ms(500);
     VL53L0X tmp;
     tmp.init();
     tmp.setTimeout(500);
-    tmp.setMeasurementTimingBudget(70000);
+    tmp.setMeasurementTimingBudget(80000);
     tmp.setSignalRateLimit(0.01);
     tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 25);
     tmp.setAddress(addr[i]);
+    tmp.startContinuous(100);
     s[i] = tmp;
     sleep_ms(50);
 }
@@ -96,9 +97,10 @@ void Sensor::init()
         tmp.init();
         tmp.setTimeout(500);
         tmp.setMeasurementTimingBudget(70000);
-        tmp.setSignalRateLimit(0.01);
-        tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 25);
+        tmp.setSignalRateLimit(0.1);
+        tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 40);
         tmp.setAddress(addr[i]);
+        tmp.startContinuous(100);
         s[i] = tmp;
         sleep_ms(50);
     }
@@ -111,29 +113,31 @@ void Sensor::readings(double *arr)
     uint8_t rxdata;
     if (i2c_read_blocking(i2c_default, 0x29, &rxdata, 1, false) >= 0)
         fixsensor();
+    int count = 0;
     for (int i = 0; i < 4; i++)
     {
-        arr[i] = s[i].readRangeSingleMillimeters() / 10.0;
+        arr[i] = s[i].readRangeContinuousMillimeters() / 10.0;
 
-        if (arr[i] == 65535 || arr[i] == 8191)
+        if (arr[i] == 6553.5 || arr[i] == 819.1)
         {
             // buzzer on
 
             for (int i = 0; i < 4; i++)
             {
+                count++;
                 gpio_init(xshut[i]);
                 gpio_set_dir(xshut[i], GPIO_OUT);
                 gpio_put(xshut[i], 0);
                 gpio_pull_up(xshut[i]);
             }
-            sleep_ms(1000); // to stabilise
+            sleep_ms(100); // to stabilise
             init();
-            i--;
+            if (count < 10)
+                i--;
         }
     }
+    printf("sensor::reading - %d, %d, %d, %d", arr[0], arr[1], arr[2], arr[3]);
 }
-
-
 
 int sensor_example()
 {
