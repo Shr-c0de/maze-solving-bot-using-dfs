@@ -160,7 +160,7 @@ void Motor::init_encoders()
 
 void Motor::move_forward(double units)
 {
-    int steps = (units * STEPS_PER_UNIT);
+    int steps = (units * SPU);
 
     reinitvar();
     // printf("Forward target = %d\n", steps);
@@ -170,6 +170,9 @@ void Motor::move_forward(double units)
         s->readings(distances);
         int left_pid = calculate_pid_speed(steps, true);
         int right_pid = calculate_pid_speed(steps, false);
+
+        left_pid *= 0.9;
+        right_pid *= 1;
         valcheck(left_pid, right_pid);
 
         // left/right checking code:
@@ -208,6 +211,9 @@ void Motor::turn(double units, bool isleft) // 90 degree increments
     {
         int left_speed = calculate_pid_speed((2 * isleft - 1) * steps, 1) / 1.5;
         int right_speed = calculate_pid_speed((2 * (!isleft) - 1) * steps, 0) / 1.5;
+
+        left_speed *= 0.9;
+        right_speed *= 1;
         valcheck(left_speed, right_speed);
 
         // printf("Left PID : %d: %d\nRight PID: %d, %d\n\n", left_speed, cA, right_speed, cB);
