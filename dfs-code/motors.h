@@ -26,10 +26,11 @@ private:
     double* distances;
 
     const int STEPS_PER_UNIT = (RATIO / WHEEL_DIAMETER / PI) * 32.0;
+    const int SPU = ((RATIO+75) / WHEEL_DIAMETER / PI) * 32.0;
 
     uint slice_num_a, slice_num_b;
 
-    const double kp = 0.7, ki = 0.2, kd = 0.5;
+    const double kp = 0.7, ki = 0.05, kd = 1.0;
     double error[2] = {0, 0};
     double prev_error[2] = {0, 0};
     double integral[2] = {0, 0};
