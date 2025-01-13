@@ -92,7 +92,6 @@ void Motor::global_encoder_irq_handler(uint gpio, uint32_t events)
     else if (gpio == ENCODER_B)
     {
         //
-
         cB++;
     }
 }

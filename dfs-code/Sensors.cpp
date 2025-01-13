@@ -46,26 +46,28 @@ void i2c_scan()
 // if sensors give bad reading, we can reboot individually
 void Sensor::reboot(int i)
 {
+    //s[i].writeReg(0x00, 0x00);
+    s[i].stopContinuous();
     gpio_put(xshut[i], 0);
-    printf("Sensor %d setup\n", i + 1);
+    printf("Sensor %d setup Address : %d\n", i + 1, s[i].getAddress());
+    sleep_ms(50);
     gpio_put(xshut[i], 1);
-    sleep_ms(500);
+    sleep_ms(10);
     VL53L0X tmp;
     tmp.init();
     tmp.setTimeout(500);
-    tmp.setMeasurementTimingBudget(80000);
-    tmp.setSignalRateLimit(0.01);
-    tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 25);
+    tmp.setMeasurementTimingBudget(200000);
+    tmp.setSignalRateLimit(0.1);
+    tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 18);
     tmp.setAddress(addr[i]);
     tmp.startContinuous(100);
     s[i] = tmp;
     sleep_ms(50);
 }
-
 // initialises all sensors, switches them all off.
 Sensor::Sensor()
 {
-    i2c_init(I2C_PORT, 400 * 1000);
+    i2c_init(I2C_PORT, 100 * 1000);
 
     gpio_set_function(I2C_SDA, GPIO_FUNC_I2C);
     gpio_set_function(I2C_SCL, GPIO_FUNC_I2C);
@@ -96,13 +98,13 @@ void Sensor::init()
         VL53L0X tmp;
         tmp.init();
         tmp.setTimeout(500);
-        tmp.setMeasurementTimingBudget(70000);
+        tmp.setMeasurementTimingBudget(200000);
         tmp.setSignalRateLimit(0.1);
-        tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 40);
+        tmp.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 18);
         tmp.setAddress(addr[i]);
+        sleep_ms(10);
         tmp.startContinuous(100);
         s[i] = tmp;
-        sleep_ms(50);
     }
     printf("Ready to go!");
 }
@@ -110,33 +112,32 @@ void Sensor::init()
 // get readings
 void Sensor::readings(double *arr)
 {
-    uint8_t rxdata;
-    if (i2c_read_blocking(i2c_default, 0x29, &rxdata, 1, false) >= 0)
-        fixsensor();
+    // uint8_t rxdata;
+    // if (i2c_read_blocking(i2c_default, 0x29, &rxdata, 1, false) >= 0)
+    //     fixsensor();
+    
     int count = 0;
     for (int i = 0; i < 4; i++)
     {
         arr[i] = s[i].readRangeContinuousMillimeters() / 10.0;
 
-        if (arr[i] == 6553.5 || arr[i] == 819.1)
+        if (count > 10)
         {
-            // buzzer on
-
-            for (int i = 0; i < 4; i++)
+            while (1)
             {
-                count++;
-                gpio_init(xshut[i]);
-                gpio_set_dir(xshut[i], GPIO_OUT);
-                gpio_put(xshut[i], 0);
-                gpio_pull_up(xshut[i]);
+                printf("read error::\nsensor::reading - %f, %f, %f, %f\n", arr[0], arr[1], arr[2], arr[3]);
+                i2c_scan();
+                sleep_ms(2000);
             }
-            sleep_ms(100); // to stabilise
-            init();
-            if (count < 10)
-                i--;
+        }
+        if (arr[i] == 6553.5)
+        {
+            //reboot(i);
+            //count++;
+            i--;
         }
     }
-    printf("sensor::reading - %d, %d, %d, %d", arr[0], arr[1], arr[2], arr[3]);
+    printf("sensor::reading - %f, %f, %f, %f\n", arr[0], arr[1], arr[2], arr[3]);
 }
 
 int sensor_example()
@@ -169,4 +170,62 @@ int sensor_example()
         sleep_ms(1000);
         i2c_scan();
     }
+}
+
+
+void write_register(uint8_t reg, uint8_t value) {
+    uint8_t buffer[2] = {reg, value};
+    i2c_write_blocking(I2C_PORT, HMC5883L_ADDR, buffer, 2, false);
+}
+
+// Function to read multiple bytes from a register
+void read_register(uint8_t reg, uint8_t *buffer, size_t length) {
+    i2c_write_blocking(I2C_PORT, HMC5883L_ADDR, &reg, 1, true);
+    i2c_read_blocking(I2C_PORT, HMC5883L_ADDR, buffer, length, false);
+}
+
+int main() {
+    stdio_init_all();
+
+    // Initialize I2C
+    i2c_init(I2C_PORT, 100 * 1000); // 100 kHz
+    gpio_set_function(SDA_PIN, GPIO_FUNC_I2C);
+    gpio_set_function(SCL_PIN, GPIO_FUNC_I2C);
+    gpio_pull_up(SDA_PIN);
+    gpio_pull_up(SCL_PIN);
+
+    // Configure HMC5883L
+    write_register(CONFIG_REG_A, 0x70); // 15Hz, normal measurement mode
+    write_register(CONFIG_REG_B, 0x20); // Gain configuration
+    write_register(MODE_REG, 0x00);     // Continuous measurement mode
+
+    while (true) {
+        uint8_t data[6];
+        read_register(DATA_REG, data, 6);
+
+        int16_t x = (data[0] << 8) | data[1];
+        int16_t z = (data[2] << 8) | data[3];
+        int16_t y = (data[4] << 8) | data[5];
+
+        // Convert raw values to signed integers
+        if (x > 32767) x -= 65536;
+        if (y > 32767) y -= 65536;
+        if (z > 32767) z -= 65536;
+
+        // Convert to microteslas
+        float xf = x * LSB_TO_UT;
+        float yf = y * LSB_TO_UT;
+        float zf = z * LSB_TO_UT;
+
+        // Calculate heading in degrees
+        float heading = atan2f(yf, xf) * (180.0 / M_PI);
+        if (heading < 0) heading += 360;
+
+        // Print results
+        printf("Magnetic field in X: %.2f uT, Y: %.2f uT, Z: %.2f uT, Heading: %.2f°\n", xf, yf, zf, heading);
+
+        sleep_ms(100);
+    }
+
+    return 0;
 }

@@ -317,26 +317,22 @@ void DFS()
 
   while (true)
   {
+    S.readings(distances);
+    printf("main: %f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
 
     int backtrackingSteps = 0;
     const int MAX_BACKTRACKING_STEPS = 100;
 
     // path.printNodes();
     // nodes.printNodes();
+    // mutex_enter_blocking(&mutex);
 
-    for (int i = 0; i < 4; i++)
-      std::cout << (distances[i]) << " ";
-    cout << endl;
-
-    //mutex_enter_blocking(&mutex);
-    S.readings(distances);
-    
     leftDistance = distances[0];
     frontleft = distances[1];
     frontright = distances[2];
     rightDistance = distances[3];
 
-    //mutex_exit(&mu//tex);
+    // mutex_exit(&mu//tex);
 
     int frontDistance = frontdistance(frontleft, frontright);
 
@@ -392,12 +388,7 @@ void DFS()
       }
     }
 
-    if (frontDistance > 30 && !visited.contains(front_pos))
-    {
-      flag = 0;
-      MoveForward(x, y, direction);
-      path.addpathEnd(front_pos);
-      visited.addEnd(front_pos);
+    S.readings(distances);s);
 
       // cout << "Moving forward" << endl;
     }
@@ -547,7 +538,7 @@ int main()
 {
   stdio_init_all();
   mutex_init(&mutex);
-
+  sleep_ms(2000);
   PIO pio = pio0;
   uint offset = pio_add_program(pio, &blink_program);
   blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 1);
@@ -561,10 +552,8 @@ int main()
   //   printf("%f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
   //   sleep_ms(200);
   // }
-  
-  DFS();
 
-  
+  DFS();
 
   // int arr[4] = {0, 0, 0, 0};
   //  while (1)
