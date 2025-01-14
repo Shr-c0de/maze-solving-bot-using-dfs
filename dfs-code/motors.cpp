@@ -80,41 +80,17 @@ void Motor::set_motor(int motor, int pid)
     }
 }
 
-void Motor::global_encoder_irq_handler(uint gpio, uint32_t events)
+void Motor::cA_handler(uint gpio, uint32_t events)
 {
-    // //printf("%d %d\n", cA, cB);
-
-    if (gpio == ENCODER_A)
-    {
-        // //printf("%d %d\n", cA, cB);
-        cA++;
-    }
-    else if (gpio == ENCODER_B)
-    {
-        //
-        cB++;
-    }
+    cA++;
 }
-
-void Motor::global_encoder_irq_handler_neg(uint gpio, uint32_t events)
+void Motor::cB_handler(uint gpio, uint32_t events)
 {
-    // //printf("%d %d\n", cA, cB);
-
-    if (gpio == ENCODER_A)
-    {
-        // //printf("%d %d\n", cA, cB);
-        cA--;
-    }
-    else if (gpio == ENCODER_B)
-    {
-        //
-
-        cB--;
-    }
+    cB++;
 }
 
 Motor::Motor(Sensor &sensor)
-{   
+{
     s = &sensor;
     Motor::init_motor();
     Motor::init_encoders();
@@ -154,8 +130,8 @@ void Motor::init_encoders()
     gpio_set_dir(ENCODER_B, GPIO_IN);
     gpio_pull_up(ENCODER_B);
 
-    gpio_set_irq_enabled_with_callback(ENCODER_A, GPIO_IRQ_EDGE_RISE, true, &global_encoder_irq_handler);
-    gpio_set_irq_enabled_with_callback(ENCODER_B, GPIO_IRQ_EDGE_RISE, true, &global_encoder_irq_handler);
+    gpio_set_irq_enabled_with_callback(ENCODER_A, GPIO_IRQ_EDGE_RISE, true, &cA_handler);
+    gpio_set_irq_enabled_with_callback(ENCODER_B, GPIO_IRQ_EDGE_RISE, true, &cB_handler);
 }
 
 void Motor::move_forward(double units)
@@ -188,7 +164,7 @@ void Motor::move_forward(double units)
             left_pid += 15;
         }
         // code end
-        //printf("PID values: %d %d \n", left_pid, right_pid);
+        // printf("PID values: %d %d \n", left_pid, right_pid);
         set_motor(0, left_pid);
         set_motor(1, right_pid);
     }

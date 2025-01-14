@@ -51,8 +51,8 @@ private:
     int calculate_pid_speed(int target, bool is_left);
     void set_motor(int motor, int pwm);
 
-    static void global_encoder_irq_handler(uint gpio, uint32_t events);
-    static void global_encoder_irq_handler_neg(uint gpio, uint32_t events);
+    static void cA_handler(uint gpio, uint32_t events);
+    static void cB_handler(uint gpio, uint32_t events);
     void valcheck(int &left, int &right);
 
 public:

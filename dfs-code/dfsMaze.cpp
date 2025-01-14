@@ -388,11 +388,6 @@ void DFS()
       }
     }
 
-    S.readings(distances);s);
-
-      // cout << "Moving forward" << endl;
-    }
-
     else if (leftDistance > 30 && !visited.contains(left_pos))
     {
       flag = 1;
@@ -539,11 +534,11 @@ int main()
   stdio_init_all();
   mutex_init(&mutex);
   sleep_ms(2000);
+
   PIO pio = pio0;
   uint offset = pio_add_program(pio, &blink_program);
   blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 1);
 
-  
   // multicore_reset_core1();
   // multicore_launch_core1(core_1_func);
 
@@ -554,7 +549,7 @@ int main()
   //   sleep_ms(200);
   // }
 
-  //DFS();
+  // DFS();
 
   // int arr[4] = {0, 0, 0, 0};
   //  while (1)
