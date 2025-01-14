@@ -36,7 +36,7 @@ void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
 mutex_t mutex;
 Sensor S;
 double distances[4];
-Motor M(S);
+Motor M;
 
 class Node
 {
@@ -318,7 +318,7 @@ void DFS()
   while (true)
   {
     S.readings(distances);
-    printf("main: %f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
+    printf("DFS: %f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
 
     int backtrackingSteps = 0;
     const int MAX_BACKTRACKING_STEPS = 100;
@@ -548,7 +548,40 @@ int main()
   //   printf("%f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
   //   sleep_ms(200);
   // }
-
+  while (1)
+  {
+    M.move_forward(1);
+    sleep_ms(1000);
+    M.turn(1, 0);
+    sleep_ms(1000);
+    M.move_forward(1);
+    sleep_ms(1000);
+    M.turn(1, 1);
+    sleep_ms(1000);
+    M.move_forward(1);
+    sleep_ms(1000);
+    M.turn(1, 1);
+    sleep_ms(1000);
+    M.move_forward(3);
+    sleep_ms(1000);
+    M.turn(1, 1);
+    sleep_ms(1000);
+    M.move_forward(1);
+    sleep_ms(1000);
+    M.turn(1, 1);
+    sleep_ms(1000);
+    M.move_forward(1);
+    sleep_ms(1000);
+    M.turn(1, 0);
+    sleep_ms(1000);
+    M.move_forward(1);
+    sleep_ms(1000);
+    M.turn(1, 0);
+    sleep_ms(1000);
+    M.move_forward(1);
+    M.turn(2, 1);
+    sleep_ms(10000);
+  }
   // DFS();
 
   // int arr[4] = {0, 0, 0, 0};
