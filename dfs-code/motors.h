@@ -22,7 +22,7 @@
 class Motor
 {
 private:
-    absolute_time_t prev_time;
+    //absolute_time_t prev_time;
     double *distances;
 
     const int STEPS_PER_UNIT = (RATIO / WHEEL_DIAMETER / PI) * 32.0;
@@ -30,7 +30,7 @@ private:
 
     uint slice_num_a, slice_num_b;
 
-    const double kp = 0.3, ki = 0.06, kd = 0.2;
+    const double kp = 0.5, ki = 0.01, kd = 1.0;
     double error[2] = {0, 0};
     double prev_error[2] = {0, 0};
     double integral[2] = {0, 0};
@@ -49,7 +49,7 @@ private:
     void reinitvar();
 
     int calculate_pid_speed(int target, bool is_left);
-    void set_motor(int motor, int pwm);
+    void set_motor(int motor, int pwm,bool direction);
 
     static void global_encoder_irq_handler(uint gpio, uint32_t events);
 
@@ -59,7 +59,7 @@ public:
     // a->left, b->right
     Motor();
     void move_forward(double units);
-    void turn(double units, bool direction);
+    void turn(float units, int direction);
     void curved_turn(double radius, double angle, bool is_left_turn);
 };
 

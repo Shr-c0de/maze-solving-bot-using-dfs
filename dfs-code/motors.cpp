@@ -37,49 +37,84 @@ void Motor::valcheck(int &left, int &right)
     }
 }
 
-int Motor::calculate_pid_speed(int inval, bool is_left)
+int Motor::calculate_pid_speed(int target, bool is_left)
 {
-    int target = (inval > 0 ? inval : -inval);
-    int direction = inval / target;
-    int index = !is_left;
+//     int target = (inval > 0 ? inval : -inval);
+//     int direction = inval / target;
+//     int index = !is_left;
 
-    error[index] = (double)((target - current_count(is_left, cA, cB)) / (target / 100.0));
+//     error[index] = (double)((target - current_count(is_left, cA, cB)) / (target / 100.0));
 
-    absolute_time_t current_time = get_absolute_time();
+//     //absolute_time_t current_time = get_absolute_time();
 
-    double derivative = (error[index] - prev_error[index]) / (current_time - prev_time);
+//    // double derivative = (error[index] - prev_error[index]) / (current_time - prev_time);
 
-    int pid_value = (kp * error[index] + kd * derivative + ki * integral[index]) / 60.0;
 
-    // //printf("Target: %d, Current: %d\n", target, current_count(is_left, cA, cB));
 
+//     int pid_value = (kp * error[index] + kd * derivative + ki * integral[index]) * 255  /* / 60.0;*/
+
+//     // //printf("Target: %d, Current: %d\n", target, current_count(is_left, cA, cB));
+
+//     prev_error[index] = error[index];
+//     prev_time = current_time;
+//     integral[index] += error[index];
+
+//     pid_value = (pid_value > 150) ? 150 : pid_value;
+
+//     int final_speed = (pid_value) * (direction);
+
+//     return final_speed;
+
+int index = !is_left;
+
+    int current_count = is_left ? cA : cB;
+    error[index] = (target - current_count) / (float)target; 
+    float derivative = error[index] - prev_error[index];
     prev_error[index] = error[index];
-    prev_time = current_time;
-    integral[index] += error[index];
+    integral[index] += error[index]; 
 
-    pid_value = (pid_value > 150) ? 150 : pid_value;
+    float pid_value = (kp * error[index] + kd * derivative + ki * integral[index]) * 255;
 
-    int final_speed = (pid_value) * (direction);
+    int deviation = cA - cB;
+    if (abs(deviation) >= THRESHOLD) {
+        if (is_left && deviation > 0) { 
+            pid_value *= 0.85; 
+        } else if (!is_left && deviation < 0) { 
+            pid_value *= 0.85; 
+        }
+    }
 
-    return final_speed;
+    return pid_value;
 }
 
-void Motor::set_motor(int motor, int pid)
+void Motor::set_motor(int motor, int pid,bool direction)
 {
     bool forward = (pid >= 0);
 
     int speed = abs(pid);
 
-    if (motor == 0)
+    // if (motor == 0)
+    // { // Motor A
+    //     gpio_put(Motor::MOTOR_A_FRONT, forward);
+    //     gpio_put(Motor::MOTOR_A_BACK, !forward);
+    //     pwm_set_gpio_level(Motor::MOTOR_A_PWM, speed);
+    // }
+    // else if (motor == 1)
+    // { // Motor B
+    //     gpio_put(Motor::MOTOR_B_FRONT, forward);
+    //     gpio_put(Motor::MOTOR_B_BACK, !forward);
+    //     pwm_set_gpio_level(Motor::MOTOR_B_PWM, speed);
+    // }
+     if (motor == 0)
     { // Motor A
-        gpio_put(Motor::MOTOR_A_FRONT, forward);
-        gpio_put(Motor::MOTOR_A_BACK, !forward);
+        gpio_put(Motor::MOTOR_A_FRONT, forward ? 1 : 0);
+        gpio_put(Motor::MOTOR_A_BACK, forward ? 0 : 1);
         pwm_set_gpio_level(Motor::MOTOR_A_PWM, speed);
     }
     else if (motor == 1)
     { // Motor B
-        gpio_put(Motor::MOTOR_B_FRONT, forward);
-        gpio_put(Motor::MOTOR_B_BACK, !forward);
+        gpio_put(Motor::MOTOR_B_FRONT, forward ? 1 : 0);
+        gpio_put(Motor::MOTOR_B_BACK, forward ? 0 : 1);
         pwm_set_gpio_level(Motor::MOTOR_B_PWM, speed);
     }
 }
@@ -102,7 +137,7 @@ void Motor::global_encoder_irq_handler(uint gpio, uint32_t events)
 
 Motor::Motor()
 {
-    prev_time = get_absolute_time();
+    //prev_time = get_absolute_time();
     Motor::init_motor();
     Motor::init_encoders();
 }
@@ -150,7 +185,7 @@ void Motor::move_forward(double units)
     int steps = (units * (SPU));
 
     reinitvar();
-    prev_time = get_absolute_time();
+   // prev_time = get_absolute_time();
     while (cA < steps || cB < steps)
     {
         // s->readings(distances);
@@ -160,12 +195,12 @@ void Motor::move_forward(double units)
 
         valcheck(left_pid, right_pid);
 
-        set_motor(0, left_pid);
-        set_motor(1, right_pid);
+        set_motor(0, left_pid,true);
+        set_motor(1, right_pid,true);
         sleep_ms(1);
     }
-    set_motor(0, 0);
-    set_motor(1, 0);
+    set_motor(0, 0,true);
+    set_motor(1, 0,true);
 
     gpio_put(MOTOR_A_FRONT, 0);
     gpio_put(MOTOR_A_BACK, 0);
@@ -173,40 +208,170 @@ void Motor::move_forward(double units)
     gpio_put(MOTOR_B_BACK, 0);
 }
 
-void Motor::turn(double units, bool isleft) // 90 degree increments
+// void Motor::turn(double units, bool isleft) // 90 degree increments
+// {
+//     int steps = units * RATIO * (WHEEL_BASE / WHEEL_DIAMETER) * 3 / 4;
+
+//     reinitvar();
+
+    
+//     //prev_time = get_absolute_time();
+
+//     //printf("%d\n", steps);
+//     switch (isleft)
+//     {
+//     case 0:
+//         gpio_put(MOTOR_A_FRONT, 0);
+//         gpio_put(MOTOR_A_BACK, 1);
+//         gpio_put(MOTOR_B_FRONT, 1);
+//         gpio_put(MOTOR_B_BACK, 0);
+//         break;
+//     case 1:
+//         gpio_put(MOTOR_A_FRONT, 1);
+//         gpio_put(MOTOR_A_BACK, 0);
+//         gpio_put(MOTOR_B_FRONT, 0);
+//         gpio_put(MOTOR_B_BACK, 1);
+//     }
+
+
+//     while (cA < steps && cB < steps)
+//     {
+//          int left_speed = calculate_pid_speed((2 * isleft - 1) * steps, 1);
+//          int right_speed = calculate_pid_speed((2 * (!isleft) - 1) * steps, 0);
+       
+
+
+        
+
+//        valcheck(left_speed, right_speed);
+
+//        // printf("Left PID : %d: %d\nRight PID: %d, %d\n\n", left_speed, cA, right_speed, cB);
+
+       
+//         set_motor(0, left_speed,isleft);
+//         set_motor(1, right_speed,!isleft);
+//         sleep_ms(1);
+//     }
+
+//     set_motor(0, 0,true);
+//     set_motor(1, 0,true);
+
+//     gpio_put(MOTOR_A_FRONT, 0);
+//     gpio_put(MOTOR_A_BACK, 0);
+//     gpio_put(MOTOR_B_FRONT, 0);
+//     gpio_put(MOTOR_B_BACK, 0);
+//     sleep_ms(500);
+
+//     //  int steps = units * RATIO * (WHEEL_BASE / WHEEL_DIAMETER) * 3 / 4;
+//     // printf("turn target = %d\n", steps);
+
+//     // reinitvar();
+    
+//     // switch (direction)
+//     // {
+//     // case 0:
+//     //     gpio_put(MOTOR_A_FRONT, 0);
+//     //     gpio_put(MOTOR_A_BACK, 1);
+//     //     gpio_put(MOTOR_B_FRONT, 1);
+//     //     gpio_put(MOTOR_B_BACK, 0);
+//     //     break;
+//     // case 1:
+//     //     gpio_put(MOTOR_A_FRONT, 1);
+//     //     gpio_put(MOTOR_A_BACK, 0);
+//     //     gpio_put(MOTOR_B_FRONT, 0);
+//     //     gpio_put(MOTOR_B_BACK, 1);
+//     // }
+
+   
+
+//     // while (cA < steps || cB < steps)
+//     // {
+//     //     // int left_speed = calculate_pid_speed(steps, 1);
+//     //     // set_motor(0, left_speed);
+
+//     //     // int right_speed = calculate_pid_speed(steps, 0);
+//     //     // set_motor(1, right_speed);
+
+//     //     int left_speed = calculate_pid_speed((2 * (direction - 1)) * steps, 1);
+//     //     int right_speed = calculate_pid_speed((2 * (!direction) - 1) * steps, 0);
+
+//     //      set_motor(0, left_speed);
+//     //      set_motor(1, right_speed);
+//     // }
+
+//     //   set_motor(0, 0);
+//     //   set_motor(1, 0);
+
+
+
+//     // pwm_set_gpio_level(MOTOR_A_PWM, 0);
+//     // pwm_set_gpio_level(MOTOR_B_PWM, 0);
+
+//     //     while (cA < steps || cB < steps)
+//     //     {
+//     //         int left_speed = calculate_pid_speed(steps, true);
+//     //         int right_speed = calculate_pid_speed(steps, false);
+//     //         set_motor(0, left_speed, true);
+//     //         set_motor(1, right_speed, false);
+//     //     }
+
+   
+
+// }
+
+void Motor::turn(float units, int direction) // 90-degree increments
 {
-    int steps = units * RATIO * (WHEEL_BASE / WHEEL_DIAMETER) * 3 / 4;
+    int steps = (int)(units * RATIO * WHEEL_BASE / WHEEL_DIAMETER / 4); // Calculate required steps
+    printf("Turn target = %d\n", steps);
 
-    reinitvar();
-    prev_time = get_absolute_time();
+    reinitvar(); // Reset variables and encoders
 
-    printf("%d\n", steps);
+    // Set motor directions based on turn direction
+    if (direction == 0) // Turn Left
+    {
+        gpio_put(MOTOR_A_FRONT, 0); // Left motor backward
+        gpio_put(MOTOR_A_BACK, 1);
+        gpio_put(MOTOR_B_FRONT, 1); // Right motor forward
+        gpio_put(MOTOR_B_BACK, 0);
+    }
+    else if (direction == 1) // Turn Right
+    {
+        gpio_put(MOTOR_A_FRONT, 1); // Left motor forward
+        gpio_put(MOTOR_A_BACK, 0);
+        gpio_put(MOTOR_B_FRONT, 0); // Right motor backward
+        gpio_put(MOTOR_B_BACK, 1);
+    }
 
     while (cA < steps || cB < steps)
     {
-        int left_speed = calculate_pid_speed((2 * isleft - 1) * steps, 1);
-        int right_speed = calculate_pid_speed((2 * (!isleft) - 1) * steps, 0);
+        // Calculate PID-based speeds
+        int left_speed = calculate_pid_speed(steps, true);  // Left motor PID
+        int right_speed = calculate_pid_speed(steps, false); // Right motor PID
 
-        left_speed *= 0.8;
+        // Synchronize motor speeds and stop each motor individually when its target is met
+        // if (cA >= steps) left_speed = 0;
+        // if (cB >= steps) right_speed = 0;
 
-        valcheck(left_speed, right_speed);
+        // Apply motor speeds
+        set_motor(0, abs(left_speed), left_speed >= 0); // Ensure polarity is respected
+        set_motor(1, abs(right_speed), right_speed >= 0);
 
-        printf("Left PID : %d: %d\nRight PID: %d, %d\n\n", left_speed, cA, right_speed, cB);
-
-        set_motor(0, left_speed);
-        set_motor(1, right_speed);
-        sleep_ms(1);
+        sleep_ms(10); // Short delay for encoder updates
     }
 
-    set_motor(0, 0);
-    set_motor(1, 0);
+    // Stop both motors completely
+    set_motor(0, 0, true);
+    set_motor(1, 0, true);
 
+    // Ensure GPIO states reflect the stop command
     gpio_put(MOTOR_A_FRONT, 0);
     gpio_put(MOTOR_A_BACK, 0);
     gpio_put(MOTOR_B_FRONT, 0);
     gpio_put(MOTOR_B_BACK, 0);
-    sleep_ms(500);
 }
+
+
+
 
 void Motor::curved_turn(double radius, double angle, bool is_left_turn)
 {

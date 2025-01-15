@@ -548,39 +548,44 @@ int main()
   //   printf("%f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
   //   sleep_ms(200);
   // }
+   
   while (1)
   {
     M.move_forward(1);
     sleep_ms(1000);
-    M.turn(1, 0);
-    sleep_ms(1000);
-    M.move_forward(1);
-    sleep_ms(1000);
-    M.turn(1, 1);
-    sleep_ms(1000);
-    M.move_forward(1);
-    sleep_ms(1000);
-    M.turn(1, 1);
-    sleep_ms(1000);
-    M.move_forward(3);
-    sleep_ms(1000);
-    M.turn(1, 1);
-    sleep_ms(1000);
-    M.move_forward(1);
-    sleep_ms(1000);
-    M.turn(1, 1);
-    sleep_ms(1000);
     M.move_forward(1);
     sleep_ms(1000);
     M.turn(1, 0);
     sleep_ms(1000);
-    M.move_forward(1);
+     M.turn(1, 1);
     sleep_ms(1000);
-    M.turn(1, 0);
-    sleep_ms(1000);
-    M.move_forward(1);
-    M.turn(2, 1);
-    sleep_ms(10000);
+    // M.move_forward(1);     
+    // sleep_ms(1000);
+    // M.turn(1, 1);
+    // sleep_ms(1000);
+    // M.move_forward(1);
+    // sleep_ms(1000);
+    // M.turn(1, 1);
+    // sleep_ms(1000);
+    // M.move_forward(3);
+    // sleep_ms(1000);
+    // M.turn(1, 1);
+    // sleep_ms(1000);
+    // M.move_forward(1);
+    // sleep_ms(1000);
+    // M.turn(1, 1);
+    // sleep_ms(1000);
+    // M.move_forward(1);
+    // sleep_ms(1000);
+    // M.turn(1, 0);
+    // sleep_ms(1000);
+    // M.move_forward(1);
+    // sleep_ms(1000);
+    // M.turn(1, 0);
+    // sleep_ms(1000);
+    // M.move_forward(1);
+    // M.turn(2, 1);
+    // sleep_ms(10000);
   }
   // DFS();
 
