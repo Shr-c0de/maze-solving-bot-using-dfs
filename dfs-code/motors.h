@@ -8,7 +8,7 @@
 #include <cmath>
 
 #define current_count(is_left, cA, cB) ((is_left) ? (cA) : (cB))
-#define RATIO 120
+#define RATIO 100
 #define WHEEL_DIAMETER 4.3 // cm
 #define WHEEL_BASE 14.5
 #define PI 3.1415
@@ -20,12 +20,11 @@ class Motor
 {
 private:
     const int STEPS_PER_UNIT = (RATIO / WHEEL_DIAMETER / PI) * 32.0;
-    const int SPU = ((RATIO + 55) / WHEEL_DIAMETER / PI) * 32.0;
 
     uint slice_num_a, slice_num_b;
     absolute_time_t prev_time;
 
-    const double kp = 0.2, ki = 0.01, kd = 0.2;
+    const double kp = 0.1, ki = 0.01, kd = 0.2;
     double error[2] = {0, 0};
     double prev_error[2] = {0, 0};
     double integral[2] = {0, 0};

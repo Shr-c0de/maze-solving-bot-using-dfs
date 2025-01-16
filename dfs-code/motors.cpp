@@ -156,7 +156,7 @@ void Motor::init_encoders()
 
 void Motor::move_forward(double units)
 {
-    int steps = (units * SPU);
+    int steps = (units * STEPS_PER_UNIT);
 
     reinitvar();
     printf("Forward target = %d\n", steps);
@@ -165,10 +165,7 @@ void Motor::move_forward(double units)
     {
         int left_pid = calculate_pid_speed(steps, true);
         int right_pid = calculate_pid_speed(steps, false);
-
-        left_pid *= 0.5;
-        right_pid *=0.8;
-        //valcheck(left_pid, right_pid);
+        valcheck(left_pid, right_pid);
 
         printf("Forward speeds: %d\t%d\n", left_pid, right_pid);
 
@@ -186,32 +183,15 @@ void Motor::move_forward(double units)
 
 void Motor::turn(double units, bool left) // 90 degree increments
 {
-    int steps = units * RATIO * (WHEEL_BASE / WHEEL_DIAMETER)  / (4 * 1.3);
-    int steps2 = units * RATIO * (WHEEL_BASE / WHEEL_DIAMETER) / (4);
+    int steps = units * RATIO * (WHEEL_BASE / WHEEL_DIAMETER) / 4;
 
     reinitvar();
     printf("turn : %d\n", steps);
 
     while (cA < steps || cB < steps)
     {
-        int left_speed ;
-        int right_speed;
-
-       if(left)
-       {
-          left_speed = calculate_pid_speed((2 * left - 1) * steps2 * 3, 1);
-        right_speed = calculate_pid_speed((2 * (!left) - 1) * steps2 * 3, 0);
-        left_speed *= 1;
-        right_speed *=1;
-       }
-
-       else{
-
-         left_speed = calculate_pid_speed((2 * left - 1) * steps, 1);
-        right_speed = calculate_pid_speed((2 * (!left) - 1) * steps, 0);
-        left_speed *= 0.8;
-        right_speed *= 1.03;
-       }
+        int left_speed = calculate_pid_speed((2 * left - 1) * steps, 1);
+        int right_speed = calculate_pid_speed((2 * (!left) - 1) * steps, 0);
 
         valcheck(left_speed, right_speed);
 
