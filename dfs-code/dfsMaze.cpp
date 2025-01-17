@@ -35,10 +35,12 @@ void blink_pin_forever(PIO pio, uint sm, uint offset, uint pin, uint freq)
   pio->txf[sm] = (125000000 / (2 * freq)) - 3;
 }
 
+double distances[4];
+char direction = 'N';
+
 mutex_t mutex;
 Sensor S;
-double distances[4];
-Motor M;
+Motor M(distances);
 
 class Node
 {
@@ -299,7 +301,7 @@ LinkedList path;
 LinkedList visited;
 LinkedList nodes;
 
-char direction = 'N';
+
 
 //
 
@@ -327,14 +329,12 @@ void DFS()
 
     // path.printNodes();
     // nodes.printNodes();
-    // mutex_enter_blocking(&mutex);
-
+    mutex_enter_blocking(&mutex);
     leftDistance = distances[0];
     frontleft = distances[1];
     frontright = distances[2];
     rightDistance = distances[3];
-
-    // mutex_exit(&mu//tex);
+    mutex_exit(&mutex);
 
     int frontDistance = frontdistance(frontleft, frontright);
 
@@ -390,46 +390,39 @@ void DFS()
       }
     }
 
-    
     if (frontDistance > 20 && !visited.contains(front_pos))
     {
       flag = 0;
-      cout<< "front pos: "<<front_pos.x <<" , "<<front_pos.y<< endl;
+      cout << "front pos: " << front_pos.x << " , " << front_pos.y << endl;
 
       MoveForward(x, y, direction);
       path.addpathEnd(front_pos);
       visited.addEnd(front_pos);
-      // M.move_forward(1);
 
       cout << "Moving forward" << endl;
     }
 
-
     else if (leftDistance > 30 && !visited.contains(left_pos))
     {
-      cout<< "left pos: "<<left_pos.x <<" , "<<left_pos.y<< endl;
-       flag = 1;
+      cout << "left pos: " << left_pos.x << " , " << left_pos.y << endl;
+      flag = 1;
       direction = TurnLeft(direction);
-      cout<<"direction: "<<direction<<endl;
-      // M.turn(1,0);
-      
+      cout << "direction: " << direction << endl;
+
       cout << "Turning Left" << endl;
     }
 
     else if (rightDistance > 30 && !visited.contains(right_pos))
     {
-      cout<< "right pos: "<<right_pos.x <<" , "<<right_pos.y<< endl;
-       flag = 1;
+      cout << "right pos: " << right_pos.x << " , " << right_pos.y << endl;
+      flag = 1;
       direction = TurnRight(direction);
-      // M.turn(1,1);
 
       cout << "Turning Right" << endl;
     }
 
     else
     {
-
-      // cout << "Getting into backtracking" << endl;
 
       Node targetNode;
 
@@ -446,14 +439,6 @@ void DFS()
 
       while (true)
       {
-        /*
-        backtrackingSteps++;
-        if (backtrackingSteps > MAX_BACKTRACKING_STEPS)
-        {
-          cout << " Backtracking exceeded step limit." << endl;
-          break;
-        }
-        */
 
         Node currentNode = path.getEnd();
         x = currentNode.x;
@@ -500,12 +485,8 @@ void DFS()
         else if (direction == 'W')
           back_pos.x++;
 
-        // path.printNodes();
-        // nodes.printNodes();
-
         if (currentNode.equals(targetNode))
         {
-          // cout << "Reached the target node during backtracking" << endl;
           nodes.removeEnd();
           flag = 0;
           break;
@@ -515,46 +496,36 @@ void DFS()
         {
           MoveForward(x, y, direction);
           path.removepathEnd();
-          //M.move_forward(1);
-
-          // cout << "Moving forward to the previous node" << endl;
         }
 
         else if (back_pos.equals(previousNode))
         {
           direction = Uturn(direction);
-          M.turn(1,1);
-          M.turn(1,1);
+          M.turn(1, 1);
+          M.turn(1, 1);
 
           MoveForward(x, y, direction);
           path.removepathEnd();
-          //M.move_forward(1);
-          // cout << "Taking a U-turn and moving to previous node" << endl;
         }
 
         else if (left_pos.equals(previousNode))
         {
           direction = TurnLeft(direction);
-          //M.turn(1,0);
-          // cout << "Turning Left" << endl;
         }
 
         else if (right_pos.equals(previousNode))
         {
           direction = TurnRight(direction);
-          //M.turn(1,1);
-          // cout << "Turning Right" << endl;
         }
 
         else // Buzzer
         {
-          // cout << "Error in backtracking\n";
-          M.turn(3,1);
+          M.turn(3, 1);
         }
         if (path.isEmpty() || nodes.isEmpty())
         {
           // cout << " Backtracking terminated. Path or Nodes list is empty." << endl;
-          M.turn(3,1);
+          M.turn(3, 1);
           break;
         }
       }
@@ -567,149 +538,62 @@ void DFS()
 
 
 
-
-// QMC5883L Constants
-#define QMC5883L_ADDR 0x0D
-#define CONTROL_REG 0x09
-#define DATA_REG 0x00
-#define SET_RESET_REG 0x0B
-
-class QMC5883LCompass {
-private:
-    uint8_t _ADDR;
-    float _magneticDeclinationDegrees = 0.0;
-    float _offset[3] = {0.0, 0.0, 0.0};
-    float _scale[3] = {1.0, 1.0, 1.0};
-    int16_t _vRaw[3] = {0, 0, 0};
-    float _vCalibrated[3] = {0.0, 0.0, 0.0};
-
-    void _writeReg(uint8_t reg, uint8_t value) {
-        uint8_t data[2] = {reg, value};
-        i2c_write_blocking(i2c_default, _ADDR, data, 2, false);
-    }
-
-    void _applyCalibration() {
-        for (int i = 0; i < 3; i++) {
-            _vCalibrated[i] = (_vRaw[i] - _offset[i]) * _scale[i];
-        }
-    }
-
-public:
-    QMC5883LCompass(uint8_t address = QMC5883L_ADDR) : _ADDR(address) {}
-
-    void init() {
-        _writeReg(SET_RESET_REG, 0x01); // Set Reset Register
-        setMode(0x01, 0x0C, 0x10, 0x00); // Default mode configuration
-    }
-
-    void setMode(uint8_t mode, uint8_t odr, uint8_t rng, uint8_t osr) {
-        _writeReg(CONTROL_REG, mode | odr | rng | osr);
-    }
-
-    void setMagneticDeclination(int degrees, uint8_t minutes) {
-        _magneticDeclinationDegrees = degrees + minutes / 60.0f;
-    }
-
-    void read() {
-        uint8_t data[6];
-        uint8_t reg = DATA_REG;
-        i2c_write_blocking(i2c_default, _ADDR, &reg, 1, true);
-        i2c_read_blocking(i2c_default, _ADDR, data, 6, false);
-
-        _vRaw[0] = (int16_t)(data[1] << 8 | data[0]);
-        _vRaw[1] = (int16_t)(data[3] << 8 | data[2]);
-        _vRaw[2] = (int16_t)(data[5] << 8 | data[4]);
-
-        _applyCalibration();
-    }
-
-    int getX() {
-        return (int)_vCalibrated[0];
-    }
-
-    int getY() {
-        return (int)_vCalibrated[1];
-    }
-
-    int getZ() {
-        return (int)_vCalibrated[2];
-    }
-
-    int getAzimuth() {
-        float heading = atan2(_vCalibrated[1], _vCalibrated[0]) * 180.0 / M_PI;
-        heading += _magneticDeclinationDegrees;
-        if (heading < 0) heading += 360;
-        if (heading >= 360) heading -= 360;
-        return (int)heading;
-    }
-};
-
-
-
-int main() {
-    stdio_init_all();
-    mutex_init(&mutex);
-    sleep_ms(2000);
-
-    PIO pio = pio0;
-    uint offset = pio_add_program(pio, &blink_program);
-    blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 1);
-
-    // Initialize 
-    i2c_init(i2c_default, 100 * 1000);
-    gpio_set_function(8, GPIO_FUNC_I2C); // SDA
-    gpio_set_function(9, GPIO_FUNC_I2C); // SCL
-    gpio_pull_up(8);
-    gpio_pull_up(9);
-
-    QMC5883LCompass compass;
-    compass.init();
-
-    compass.setMagneticDeclination(0, 39);
-
-    uint32_t start_time = time_us_32(); 
-    uint32_t elapsed_time = 0;
-
-    while (elapsed_time < 100000000) {
-        compass.read();
-        int azimuth = compass.getAzimuth();
-
-        printf("Azimuth: %d degrees\n", azimuth);
-        sleep_ms(50); 
-
-        elapsed_time = time_us_32() - start_time;  
-    }
-   
-
-    return 0;
+void core1main()
+{
+  while (1)
+  {
+    mutex_enter_blocking(&mutex);
+    S.readings(distances);
+    
+    mutex_exit(&mutex);
+    sleep_ms(10);
+  }
 }
 
+int main()
+{
+  stdio_init_all();
+  mutex_init(&mutex);
+  sleep_ms(2000);
 
+  PIO pio = pio0;
+  uint offset = pio_add_program(pio, &blink_program);
+  blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 1);
 
+  multicore_launch_core1(core1main);
 
+  QMC5883LCompass compass;
+  compass.init();
 
+  compass.setMagneticDeclination(0, 39);
 
+  uint32_t start_time = time_us_32();
+  uint32_t elapsed_time = 0;
 
+  while (1)
+  {
+    M.move_forward(1);
+  }
 
+  return 0;
+}
 
-  
-  // blink, doesnt use cpu
-  // while (1)
-  // {
-  //   printf("%f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
-  //   sleep_ms(200);
-  // }
+// blink, doesnt use cpu
+// while (1)
+// {
+//   printf("%f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
+//   sleep_ms(200);
+// }
 
-  // while (1)
-  // {
-  //   M.move_forward(3);
-  //   sleep_ms(2000);
-  //   M.turn(1, 0);
-  //   sleep_ms(2000);
-  //   M.turn(1, 1);
-  //   sleep_ms(2000);
-  // }
-  // DFS();
-
+// while (1)
+// {
+//   M.move_forward(3);
+//   sleep_ms(2000);
+//   M.turn(1, 0);
+//   sleep_ms(2000);
+//   M.turn(1, 1);
+//   sleep_ms(2000);
+// }
+// DFS();
 
 // infinity - 8190

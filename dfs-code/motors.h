@@ -5,6 +5,7 @@
 #include "pico/stdlib.h"
 #include "hardware/pwm.h"
 #include "hardware/irq.h"
+#include "Sensors.h"
 #include <cmath>
 
 #define current_count(is_left, cA, cB) ((is_left) ? (cA) : (cB))
@@ -19,6 +20,8 @@
 class Motor
 {
 private:
+    double *distances;
+    QMC5883LCompass compass;
     const int STEPS_PER_UNIT = (RATIO / WHEEL_DIAMETER / PI) * 32.0;
 
     uint slice_num_a, slice_num_b;
@@ -51,7 +54,8 @@ private:
 
 public:
     // a->left, b->right
-    Motor();
+    // Motor();
+    Motor(double* arr);
     void move_forward(double units);
     void turn(double units, bool direction);
     void curved_turn(double radius, double angle, bool is_left_turn);

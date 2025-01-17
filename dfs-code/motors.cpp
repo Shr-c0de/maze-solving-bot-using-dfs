@@ -48,8 +48,10 @@ int Motor::calculate_pid_speed(int inval, bool is_left)
     absolute_time_t current_time = get_absolute_time();
 
     double derivative = (error[index] - prev_error[index]) / (current_time / 10000 - prev_time / 10000);
-    if(derivative > 1000) derivative = 255;
-    if(derivative < 1000) derivative = -255;
+    if (derivative > 1000)
+        derivative = 255;
+    if (derivative < 1000)
+        derivative = -255;
 
     int pid_value = (kp * error[index] + kd * derivative + ki * integral[index]);
 
@@ -110,8 +112,15 @@ void Motor::global_encoder_irq_handler(uint gpio, uint32_t events)
     }
 }
 
-Motor::Motor()
+// Motor::Motor()
+// {
+//     Motor::init_motor();
+//     Motor::init_encoders();
+// }
+Motor::Motor(double* arr)
 {
+    this->distances = arr;
+    compass.init();
     Motor::init_motor();
     Motor::init_encoders();
 }
@@ -163,6 +172,7 @@ void Motor::move_forward(double units)
 
     while (cA < steps || cB < steps)
     {
+        std::cout << "motor:\t" << distances[0] << " " << distances[1] << " " << distances[2] << " " << distances[3] << std::endl;
         int left_pid = calculate_pid_speed(steps, true);
         int right_pid = calculate_pid_speed(steps, false);
         valcheck(left_pid, right_pid);

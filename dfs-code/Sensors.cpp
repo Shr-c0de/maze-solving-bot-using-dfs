@@ -46,7 +46,7 @@ void i2c_scan()
 // if sensors give bad reading, we can reboot individually
 void Sensor::reboot(int i)
 {
-    //s[i].writeReg(0x00, 0x00);
+    // s[i].writeReg(0x00, 0x00);
     s[i].stopContinuous();
     gpio_put(xshut[i], 0);
     printf("Sensor %d setup Address : %d\n", i + 1, s[i].getAddress());
@@ -115,7 +115,7 @@ void Sensor::readings(double *arr)
     // uint8_t rxdata;
     // if (i2c_read_blocking(i2c_default, 0x29, &rxdata, 1, false) >= 0)
     //     fixsensor();
-    
+
     int count = 0;
     for (int i = 0; i < 4; i++)
     {
@@ -132,100 +132,119 @@ void Sensor::readings(double *arr)
         }
         if (arr[i] == 6553.5)
         {
-            //reboot(i);
-            //count++;
+            // reboot(i);
+            // count++;
             i--;
         }
     }
     printf("sensor::reading - %f, %f, %f, %f\n", arr[0], arr[1], arr[2], arr[3]);
 }
 
-int sensor_example()
+// int sensor_example()
+// {
+
+//     stdio_init_all();
+//     sleep_ms(3000);
+
+//     // blink, doesnt use cpu
+//     // PIO pio = pio0;
+//     // uint offset = pio_add_program(pio, &blink_program);
+//     // blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 3);
+
+//     Sensor S;
+//     i2c_scan();
+//     sleep_ms(1000);
+//     S.init();
+//     printf("Program starts:\n\n");
+//     i2c_scan();
+
+//     double arr[4];
+//     while (1)
+//     {
+
+//         S.readings(arr);
+//         for (int i = 0; i < 4; i++)
+//         {
+//             printf("%s- %d\n", sensor_example[i], arr[i]);
+//         }
+//         sleep_ms(1000);
+//         i2c_scan();
+//     }
+// }
+
+///////////////////////////////// compass module
+
+void QMC5883LCompass::_writeReg(uint8_t reg, uint8_t value)
 {
+    uint8_t data[2] = {reg, value};
+    i2c_write_blocking(i2c_default, _ADDR, data, 2, false);
+}
 
-    stdio_init_all();
-    sleep_ms(3000);
-
-    // blink, doesnt use cpu
-    // PIO pio = pio0;
-    // uint offset = pio_add_program(pio, &blink_program);
-    // blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 3);
-
-    Sensor S;
-    i2c_scan();
-    sleep_ms(1000);
-    S.init();
-    printf("Program starts:\n\n");
-    i2c_scan();
-
-    double arr[4];
-    while (1)
+void QMC5883LCompass::_applyCalibration()
+{
+    for (int i = 0; i < 3; i++)
     {
-
-        S.readings(arr);
-        for (int i = 0; i < 4; i++)
-        {
-            printf("%s- %d\n", sensor_example[i], arr[i]);
-        }
-        sleep_ms(1000);
-        i2c_scan();
+        _vCalibrated[i] = (_vRaw[i] - _offset[i]) * _scale[i];
     }
 }
 
+QMC5883LCompass::QMC5883LCompass()
+{
+    _ADDR = QMC5883L_ADDR;
+}
 
-// void write_register(uint8_t reg, uint8_t value) {
-//     uint8_t buffer[2] = {reg, value};
-//     i2c_write_blocking(I2C_PORT, HMC5883L_ADDR, buffer, 2, false);
-// }
+void QMC5883LCompass::init()
+{
+    _writeReg(SET_RESET_REG, 0x01);  // Set Reset Register
+    setMode(0x01, 0x0C, 0x10, 0x00); // Default mode configuration
+}
 
-// // Function to read multiple bytes from a register
-// void read_register(uint8_t reg, uint8_t *buffer, size_t length) {
-//     i2c_write_blocking(I2C_PORT, HMC5883L_ADDR, &reg, 1, true);
-//     i2c_read_blocking(I2C_PORT, HMC5883L_ADDR, buffer, length, false);
-// }
+void QMC5883LCompass::setMode(uint8_t mode, uint8_t odr, uint8_t rng, uint8_t osr)
+{
+    _writeReg(CONTROL_REG, mode | odr | rng | osr);
+}
 
-// int main() {
-//     stdio_init_all();
+void QMC5883LCompass::setMagneticDeclination(int degrees, uint8_t minutes)
+{
+    _magneticDeclinationDegrees = degrees + minutes / 60.0f;
+}
 
-//     // Initialize I2C
-//     i2c_init(I2C_PORT, 100 * 1000); // 100 kHz
-//     gpio_set_function(SDA_PIN, GPIO_FUNC_I2C);
-//     gpio_set_function(SCL_PIN, GPIO_FUNC_I2C);
-//     gpio_pull_up(SDA_PIN);
-//     gpio_pull_up(SCL_PIN);
+void QMC5883LCompass::read()
+{
+    uint8_t data[6];
+    uint8_t reg = DATA_REG;
+    i2c_write_blocking(i2c_default, _ADDR, &reg, 1, true);
+    i2c_read_blocking(i2c_default, _ADDR, data, 6, false);
 
-//     // Configure HMC5883L
-//     write_register(CONFIG_REG_A, 0x70); // 15Hz, normal measurement mode
-//     write_register(CONFIG_REG_B, 0x20); // Gain configuration
-//     write_register(MODE_REG, 0x00);     // Continuous measurement mode
+    _vRaw[0] = (int16_t)(data[1] << 8 | data[0]);
+    _vRaw[1] = (int16_t)(data[3] << 8 | data[2]);
+    _vRaw[2] = (int16_t)(data[5] << 8 | data[4]);
 
-//     while (true) {
-//         uint8_t data[6];
-//         read_register(DATA_REG, data, 6);
+    _applyCalibration();
+}
 
-//         int16_t x = (data[0] << 8) | data[1];
-//         int16_t z = (data[2] << 8) | data[3];
-//         int16_t y = (data[4] << 8) | data[5];
+int QMC5883LCompass::getX()
+{
+    return (int)_vCalibrated[0];
+}
 
-//         // Convert raw values to signed integers
-//         if (x > 32767) x -= 65536;
-//         if (y > 32767) y -= 65536;
-//         if (z > 32767) z -= 65536;
+int QMC5883LCompass::getY()
+{
+    return (int)_vCalibrated[1];
+}
 
-//         // Convert to microteslas
-//         float xf = x * LSB_TO_UT;
-//         float yf = y * LSB_TO_UT;
-//         float zf = z * LSB_TO_UT;
+int QMC5883LCompass::getZ()
+{
+    return (int)_vCalibrated[2];
+}
 
-//         // Calculate heading in degrees
-//         float heading = atan2f(yf, xf) * (180.0 / M_PI);
-//         if (heading < 0) heading += 360;
-
-//         // Print results
-//         printf("Magnetic field in X: %.2f uT, Y: %.2f uT, Z: %.2f uT, Heading: %.2f°\n", xf, yf, zf, heading);
-
-//         sleep_ms(100);
-//     }
-
-//     return 0;
-// }
+int QMC5883LCompass::getAzimuth()
+{
+    float heading = atan2(_vCalibrated[1], _vCalibrated[0]) * 180.0 / M_PI;
+    heading += _magneticDeclinationDegrees;
+    if (heading < 0)
+        heading += 360;
+    if (heading >= 360)
+        heading -= 360;
+    return (int)heading;
+}

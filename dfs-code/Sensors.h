@@ -6,6 +6,7 @@
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
 #include "hardware/pio.h"
+#include<cmath>
 // pico libraries
 
 // #include "blink.pio.h"
@@ -32,6 +33,46 @@ public:
     Sensor();
     void init();
     void readings(double *arr);
+};
+
+// QMC5883L Constants
+#define QMC5883L_ADDR 0x0D
+#define CONTROL_REG 0x09
+#define DATA_REG 0x00
+#define SET_RESET_REG 0x0B
+
+class QMC5883LCompass
+{
+private:
+  uint8_t _ADDR;
+  float _magneticDeclinationDegrees = 0.0;
+  float _offset[3] = {0.0, 0.0, 0.0};
+  float _scale[3] = {1.0, 1.0, 1.0};
+  int16_t _vRaw[3] = {0, 0, 0};
+  float _vCalibrated[3] = {0.0, 0.0, 0.0};
+
+  void _writeReg(uint8_t reg, uint8_t value);
+
+  void _applyCalibration();
+
+public:
+  QMC5883LCompass();
+
+  void init();
+
+  void setMode(uint8_t mode, uint8_t odr, uint8_t rng, uint8_t osr);
+
+  void setMagneticDeclination(int degrees, uint8_t minutes);
+
+  void read();
+
+  int getX();
+
+  int getY();
+
+  int getZ();
+
+  int getAzimuth();
 };
 
 #endif
