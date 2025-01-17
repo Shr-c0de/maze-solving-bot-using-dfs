@@ -18,25 +18,6 @@ void Motor::reinitvar()
     }
 }
 
-void Motor::valcheck(int &left, int &right)
-{
-
-    // if (cA - cB > THRESHOLD)
-    // {
-    //     if (left > 0)
-    //         left = 0;
-    //     if (right < 100)
-    //         right *= 0.7;
-    // }
-    // else if (cB - cA > THRESHOLD)
-    // {
-    //     if (left < 100)
-    //         left *= 0.7;
-    //     if (right > 0)
-    //         right = 0;
-    // }
-}
-
 void Motor::front_pid_speed(int target)
 {
     absolute_time_t current_time = get_absolute_time();
@@ -47,8 +28,8 @@ void Motor::front_pid_speed(int target)
     double derivative0 = ((error[0] - prev_error[0]) / (current_time / 10000 - prev_time / 10000));
     double derivative1 = ((error[1] - prev_error[1]) / (current_time / 10000 - prev_time / 10000));
 
-    speed[0] = (kp * error[0] + kd * derivative0 + ki * integral[0])/2;
-    speed[1] = (kp * error[1] + kd * derivative1 + ki * integral[1])/2;
+    speed[0] = (kp * error[0] + kd * derivative0 + ki * integral[0]) / 2;
+    speed[1] = (kp * error[1] + kd * derivative1 + ki * integral[1]) / 2;
 
     if (cA > cB + THRESHOLD)
     {
@@ -71,16 +52,16 @@ void Motor::front_pid_speed(int target)
 void Motor::set_motor()
 {
     // Motor A
-    int forward1 = abs(speed[0]);
+    int forward1 = (speed[0] > 0? 1 : 0);
     gpio_put(Motor::MOTOR_A_FRONT, forward1);
     gpio_put(Motor::MOTOR_A_BACK, !forward1);
-    pwm_set_gpio_level(Motor::MOTOR_A_PWM, speed[0]);
+    pwm_set_gpio_level(Motor::MOTOR_A_PWM, abs(speed[0]));
 
     // Motor B
-    int forward2 = abs(speed[1]);
+    int forward2 = (speed[1] > 0? 1 : 0);
     gpio_put(Motor::MOTOR_B_FRONT, forward2);
     gpio_put(Motor::MOTOR_B_BACK, !forward2);
-    pwm_set_gpio_level(Motor::MOTOR_B_PWM, speed[1]);
+    pwm_set_gpio_level(Motor::MOTOR_B_PWM, abs(speed[1]));
 }
 
 void Motor::global_encoder_irq_handler(uint gpio, uint32_t events)
@@ -148,7 +129,7 @@ void Motor::move_forward(double units)
 
     reinitvar();
     printf("Forward target = %d\n", steps);
-
+    prev_time = get_absolute_time();
     while (cA < steps || cB < steps)
     {
         front_pid_speed(steps);
@@ -187,21 +168,49 @@ void Motor::move_forward(double units)
     gpio_put(MOTOR_B_BACK, 0);
 }
 
-void Motor::turn(double units) // 90 degree increments
+void Motor::turn_PID(int target, int azimuth)
 {
-    int target = compass.getAzimuth() + units;
-    if (target > 360)
-        target -= 360;
+    absolute_time_t current_time = get_absolute_time();
+
+    turn_error = (target - azimuth); //func
+
+    double derivative = ((turn_error - prev_turn) / (current_time / 10000 - prev_time / 10000));
+
+    speed[0] = (kp * error[0] + kd * derivative + ki * integral[0]) / 2;
+
+    if (cA > cB + THRESHOLD)
+    {
+        speed[0] = 0;
+    }
+    else if (cB > cA + THRESHOLD)
+    {
+        speed[1] = 0;
+    }
+
+    prev_error[0] = error[0];
+    prev_error[1] = error[1];
+
+    integral[0] += error[0];
+    integral[1] += error[1];
+
+    prev_time = current_time;
+}
+
+void Motor::turn(double degree)
+{
+    int target = compass.getAzimuth() + degree;
     reinitvar();
-
+    int azimuth;
     int facing = compass.getAzimuth();
-
-    // set_motor(0, 0);
-    // set_motor(1, 0);
-
+    while (abs(compass.getAzimuth() - target) > 3)
+    {
+        compass.read();
+        azimuth = compass.getAzimuth();
+        turn_PID(target, azimuth);
+        set_motor();
+    }
     gpio_put(MOTOR_A_FRONT, 0);
     gpio_put(MOTOR_A_BACK, 0);
     gpio_put(MOTOR_B_FRONT, 0);
     gpio_put(MOTOR_B_BACK, 0);
-    printf("Turn::cA %d\ncB %d\n\n", cA, cB);
 }

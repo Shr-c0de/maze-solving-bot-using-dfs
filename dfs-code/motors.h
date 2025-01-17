@@ -29,8 +29,11 @@ private:
     absolute_time_t prev_time;
 
     const double kp = 0.1, ki = 0.01, kd = 0.2;
+    const double ktp = 0.1, kti = 0.01, ktd = 0.2; //for turns
+
     double error[2] = {0, 0};
     double prev_error[2] = {0, 0};
+    double turn_error = 0, prev_turn = 0;
     double integral[2] = {0, 0};
     int speed[2] = {0, 0};
 
@@ -51,7 +54,7 @@ private:
 
     static void global_encoder_irq_handler(uint gpio, uint32_t events);
     // static void global_encoder_irq_handler_neg(uint gpio, uint32_t events);
-    void valcheck(int &left, int &right);
+    void turn_PID(int target, int azimuth);
 
 public:
     QMC5883LCompass compass;

@@ -210,9 +210,9 @@ int QMC5883LCompass::getAzimuth()
 {
     float heading = atan2(_vCalibrated[1], _vCalibrated[0]) * 180.0 / M_PI;
     heading += _magneticDeclinationDegrees;
-    // if (heading < 0)
-    //     heading += 360;
-    // if (heading >= 360)
-    //     heading -= 360;
+    if (heading < 0)
+        heading += 360;
+    if (heading >= 360)
+        heading -= 360;
     return (int)heading;
 }
