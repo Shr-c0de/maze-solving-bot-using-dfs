@@ -20,84 +20,67 @@ void Motor::reinitvar()
 
 void Motor::valcheck(int &left, int &right)
 {
-    if (cA - cB > THRESHOLD)
-    {
-        if (left > 0)
-            left = 0;
-        if (right < 100)
-            right *= 0.7;
-    }
-    else if (cB - cA > THRESHOLD)
-    {
-        if (left < 100)
-            left *= 0.7;
-        if (right > 0)
-            right = 0;
-    }
+
+    // if (cA - cB > THRESHOLD)
+    // {
+    //     if (left > 0)
+    //         left = 0;
+    //     if (right < 100)
+    //         right *= 0.7;
+    // }
+    // else if (cB - cA > THRESHOLD)
+    // {
+    //     if (left < 100)
+    //         left *= 0.7;
+    //     if (right > 0)
+    //         right = 0;
+    // }
 }
 
-int Motor::calculate_pid_speed(int inval, bool is_left)
+void Motor::front_pid_speed(int target)
 {
-    double target = (inval > 0 ? inval : -inval);
-    int direction = (inval > 0 ? 1 : -1);
-
-    int index = !is_left;
-
-    error[index] = (target - current_count(is_left, cA, cB)) / (target / 100);
-
     absolute_time_t current_time = get_absolute_time();
 
-    double derivative = (error[index] - prev_error[index]) / (current_time / 10000 - prev_time / 10000);
-    if (derivative > 1000)
-        derivative = 255;
-    if (derivative < 1000)
-        derivative = -255;
+    error[0] = (target - cA) / (target / 100);
+    error[1] = (target - cB) / (target / 100);
 
-    int pid_value = (kp * error[index] + kd * derivative + ki * integral[index]);
+    double derivative0 = ((error[0] - prev_error[0]) / (current_time / 10000 - prev_time / 10000));
+    double derivative1 = ((error[1] - prev_error[1]) / (current_time / 10000 - prev_time / 10000));
 
-    printf("error: %f, derivative: %f, integral: %f\n", error[index], derivative, integral);
+    speed[0] = (kp * error[0] + kd * derivative0 + ki * integral[0])/2;
+    speed[1] = (kp * error[1] + kd * derivative1 + ki * integral[1])/2;
 
-    prev_error[index] = error[index];
-    integral[index] += error[index];
+    if (cA > cB + THRESHOLD)
+    {
+        speed[0] = 0;
+    }
+    else if (cB > cA + THRESHOLD)
+    {
+        speed[1] = 0;
+    }
+
+    prev_error[0] = error[0];
+    prev_error[1] = error[1];
+
+    integral[0] += error[0];
+    integral[1] += error[1];
+
     prev_time = current_time;
-
-    pid_value = (pid_value > 255) ? 255 : pid_value;
-
-    int final_speed = (pid_value) * (direction);
-
-    return final_speed;
 }
 
-void Motor::set_motor(int motor, int pid)
+void Motor::set_motor()
 {
-    bool forward = (pid >= 0);
+    // Motor A
+    int forward1 = abs(speed[0]);
+    gpio_put(Motor::MOTOR_A_FRONT, forward1);
+    gpio_put(Motor::MOTOR_A_BACK, !forward1);
+    pwm_set_gpio_level(Motor::MOTOR_A_PWM, speed[0]);
 
-    int speed = abs(pid);
-
-    if (speed > 255)
-        speed = 255;
-
-    switch (motor)
-    {
-    case 0:
-        // Motor A
-        gpio_put(Motor::MOTOR_A_FRONT, forward);
-        gpio_put(Motor::MOTOR_A_BACK, !forward);
-        pwm_set_gpio_level(Motor::MOTOR_A_PWM, speed);
-
-        printf("set_motors: \t%d, %d\n", motor, pid);
-        break;
-    case 1:
-        // Motor B
-        gpio_put(Motor::MOTOR_B_FRONT, forward);
-        gpio_put(Motor::MOTOR_B_BACK, !forward);
-        pwm_set_gpio_level(Motor::MOTOR_B_PWM, speed);
-
-        printf("set_motors: %d, %d\n", motor, pid);
-        break;
-    default:
-        printf("error detected in set_motor");
-    }
+    // Motor B
+    int forward2 = abs(speed[1]);
+    gpio_put(Motor::MOTOR_B_FRONT, forward2);
+    gpio_put(Motor::MOTOR_B_BACK, !forward2);
+    pwm_set_gpio_level(Motor::MOTOR_B_PWM, speed[1]);
 }
 
 void Motor::global_encoder_irq_handler(uint gpio, uint32_t events)
@@ -112,13 +95,9 @@ void Motor::global_encoder_irq_handler(uint gpio, uint32_t events)
     }
 }
 
-// Motor::Motor()
-// {
-//     Motor::init_motor();
-//     Motor::init_encoders();
-// }
-Motor::Motor(double* arr)
+Motor::Motor(double *arr, mutex_t *mut)
 {
+    this->mutex = mutex;
     this->distances = arr;
     compass.init();
     Motor::init_motor();
@@ -172,18 +151,35 @@ void Motor::move_forward(double units)
 
     while (cA < steps || cB < steps)
     {
-        std::cout << "motor:\t" << distances[0] << " " << distances[1] << " " << distances[2] << " " << distances[3] << std::endl;
-        int left_pid = calculate_pid_speed(steps, true);
-        int right_pid = calculate_pid_speed(steps, false);
-        valcheck(left_pid, right_pid);
+        front_pid_speed(steps);
+        std::cout << speed[0] << " " << speed[1] << std::endl;
+        uint32_t k;
 
-        printf("Forward speeds: %d\t%d\n", left_pid, right_pid);
+        int left_dist = distances[0], right_dist = distances[3];
+        int fL = distances[1], fR = distances[2];
+        // std::cout << "move_f: " << left_dist << " " << fL << " " << fR << " " << right_dist << std::endl;
+        std::cout << "move_f speed: " << speed[0] << " " << speed[1] << std::endl;
 
-        set_motor(0, left_pid);
-        set_motor(1, right_pid);
+        if (fL < 8 || fR < 8)
+        {
+            speed[0] = 0;
+            speed[1] = 0;
+            set_motor();
+            return;
+        }
+
+        if (left_dist < 6)
+        {
+            speed[1] /= 2;
+        }
+        else if (right_dist < 6)
+        {
+            speed[0] /= 2;
+        }
+        set_motor();
+
+        sleep_ms(20);
     }
-    set_motor(0, 0);
-    set_motor(1, 0);
 
     gpio_put(MOTOR_A_FRONT, 0);
     gpio_put(MOTOR_A_BACK, 0);
@@ -191,36 +187,21 @@ void Motor::move_forward(double units)
     gpio_put(MOTOR_B_BACK, 0);
 }
 
-void Motor::turn(double units, bool left) // 90 degree increments
+void Motor::turn(double units) // 90 degree increments
 {
-    int steps = units * RATIO * (WHEEL_BASE / WHEEL_DIAMETER) / 4;
-
+    int target = compass.getAzimuth() + units;
+    if (target > 360)
+        target -= 360;
     reinitvar();
-    printf("turn : %d\n", steps);
 
-    while (cA < steps || cB < steps)
-    {
-        int left_speed = calculate_pid_speed((2 * left - 1) * steps, 1);
-        int right_speed = calculate_pid_speed((2 * (!left) - 1) * steps, 0);
+    int facing = compass.getAzimuth();
 
-        valcheck(left_speed, right_speed);
-
-        printf("Turn:: Left PID : %d cA %d\nRight PID: %d cB %d\n\n", left_speed, cA, right_speed, cB);
-
-        set_motor(0, left_speed);
-        set_motor(1, right_speed);
-    }
-
-    set_motor(0, 0);
-    set_motor(1, 0);
+    // set_motor(0, 0);
+    // set_motor(1, 0);
 
     gpio_put(MOTOR_A_FRONT, 0);
     gpio_put(MOTOR_A_BACK, 0);
     gpio_put(MOTOR_B_FRONT, 0);
     gpio_put(MOTOR_B_BACK, 0);
     printf("Turn::cA %d\ncB %d\n\n", cA, cB);
-}
-
-void Motor::curved_turn(double radius, double angle, bool is_left_turn)
-{
 }

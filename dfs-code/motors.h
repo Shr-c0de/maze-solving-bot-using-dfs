@@ -5,6 +5,7 @@
 #include "pico/stdlib.h"
 #include "hardware/pwm.h"
 #include "hardware/irq.h"
+#include "pico/multicore.h"
 #include "Sensors.h"
 #include <cmath>
 
@@ -21,7 +22,7 @@ class Motor
 {
 private:
     double *distances;
-    QMC5883LCompass compass;
+    mutex_t *mutex;
     const int STEPS_PER_UNIT = (RATIO / WHEEL_DIAMETER / PI) * 32.0;
 
     uint slice_num_a, slice_num_b;
@@ -45,19 +46,20 @@ private:
     void init_motor();
     void reinitvar();
 
-    int calculate_pid_speed(int target, bool is_left);
-    void set_motor(int motor, int pwm);
+    void front_pid_speed(int target);
+    void set_motor();
 
     static void global_encoder_irq_handler(uint gpio, uint32_t events);
     // static void global_encoder_irq_handler_neg(uint gpio, uint32_t events);
     void valcheck(int &left, int &right);
 
 public:
+    QMC5883LCompass compass;
     // a->left, b->right
     // Motor();
-    Motor(double* arr);
+    Motor(double *arr, mutex_t *mutex);
     void move_forward(double units);
-    void turn(double units, bool direction);
-    void curved_turn(double radius, double angle, bool is_left_turn);
+    void turn(double units);
+    // void curved_turn(double radius, double angle, bool is_left_turn);
 };
 #endif

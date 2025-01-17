@@ -40,7 +40,7 @@ char direction = 'N';
 
 mutex_t mutex;
 Sensor S;
-Motor M(distances);
+Motor M(distances, &mutex);
 
 class Node
 {
@@ -214,7 +214,7 @@ public:
 
 char TurnLeft(char direction)
 {
-  M.turn(1, 0);
+  M.turn(1);
   if (direction == 'N')
     return 'W';
   if (direction == 'W')
@@ -226,9 +226,7 @@ char TurnLeft(char direction)
 
 char Uturn(char dir)
 {
-  M.turn(1, 0);
-  sleep_ms(100);
-  M.turn(1, 0);
+  M.turn(180);
 
   if (dir == 'N')
     return 'S';
@@ -241,7 +239,7 @@ char Uturn(char dir)
 
 char TurnRight(char direction)
 {
-  M.turn(1, 1);
+  M.turn(90);
   if (direction == 'N')
     return 'E';
   if (direction == 'E')
@@ -300,8 +298,6 @@ int frontdistance(int front1Distance, int front2Distance)
 LinkedList path;
 LinkedList visited;
 LinkedList nodes;
-
-
 
 //
 
@@ -501,8 +497,6 @@ void DFS()
         else if (back_pos.equals(previousNode))
         {
           direction = Uturn(direction);
-          M.turn(1, 1);
-          M.turn(1, 1);
 
           MoveForward(x, y, direction);
           path.removepathEnd();
@@ -518,14 +512,14 @@ void DFS()
           direction = TurnRight(direction);
         }
 
-        else // Buzzer
-        {
-          M.turn(3, 1);
-        }
+        // else // Buzzer
+        // {
+        //   M.turn(3, 1);
+        // }
         if (path.isEmpty() || nodes.isEmpty())
         {
           // cout << " Backtracking terminated. Path or Nodes list is empty." << endl;
-          M.turn(3, 1);
+          // M.turn(3, 1);
           break;
         }
       }
@@ -536,17 +530,11 @@ void DFS()
 /////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
 void core1main()
 {
   while (1)
   {
-    mutex_enter_blocking(&mutex);
     S.readings(distances);
-    
-    mutex_exit(&mutex);
-    sleep_ms(10);
   }
 }
 
@@ -562,17 +550,23 @@ int main()
 
   multicore_launch_core1(core1main);
 
-  QMC5883LCompass compass;
-  compass.init();
+  // QMC5883LCompass compass;
+  // compass.init();
 
-  compass.setMagneticDeclination(0, 39);
+  // compass.setMagneticDeclination(0, 39);
 
-  uint32_t start_time = time_us_32();
-  uint32_t elapsed_time = 0;
+  // while (1)
+  // {
+  //   i2c_scan();
+  //   compass.read();
+  //   int azimuth = compass.getAzimuth();
 
-  while (1)
-  {
-    M.move_forward(1);
+  //   cout << compass.getAzimuth() << endl;
+  //   sleep_ms(500);
+  // }
+  while(1){
+    M.move_forward(20);
+    sleep_ms(1000);
   }
 
   return 0;

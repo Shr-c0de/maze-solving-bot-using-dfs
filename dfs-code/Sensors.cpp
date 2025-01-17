@@ -125,7 +125,7 @@ void Sensor::readings(double *arr)
         {
             while (1)
             {
-                printf("read error::\nsensor::reading - %f, %f, %f, %f\n", arr[0], arr[1], arr[2], arr[3]);
+                //printf("read error::\nsensor::reading - %f, %f, %f, %f\n", arr[0], arr[1], arr[2], arr[3]);
                 i2c_scan();
                 sleep_ms(2000);
             }
@@ -139,38 +139,6 @@ void Sensor::readings(double *arr)
     }
     printf("sensor::reading - %f, %f, %f, %f\n", arr[0], arr[1], arr[2], arr[3]);
 }
-
-// int sensor_example()
-// {
-
-//     stdio_init_all();
-//     sleep_ms(3000);
-
-//     // blink, doesnt use cpu
-//     // PIO pio = pio0;
-//     // uint offset = pio_add_program(pio, &blink_program);
-//     // blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 3);
-
-//     Sensor S;
-//     i2c_scan();
-//     sleep_ms(1000);
-//     S.init();
-//     printf("Program starts:\n\n");
-//     i2c_scan();
-
-//     double arr[4];
-//     while (1)
-//     {
-
-//         S.readings(arr);
-//         for (int i = 0; i < 4; i++)
-//         {
-//             printf("%s- %d\n", sensor_example[i], arr[i]);
-//         }
-//         sleep_ms(1000);
-//         i2c_scan();
-//     }
-// }
 
 ///////////////////////////////// compass module
 
@@ -242,9 +210,9 @@ int QMC5883LCompass::getAzimuth()
 {
     float heading = atan2(_vCalibrated[1], _vCalibrated[0]) * 180.0 / M_PI;
     heading += _magneticDeclinationDegrees;
-    if (heading < 0)
-        heading += 360;
-    if (heading >= 360)
-        heading -= 360;
+    // if (heading < 0)
+    //     heading += 360;
+    // if (heading >= 360)
+    //     heading -= 360;
     return (int)heading;
 }
