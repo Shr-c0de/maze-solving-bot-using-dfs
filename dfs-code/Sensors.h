@@ -41,38 +41,27 @@ public:
 #define DATA_REG 0x00
 #define SET_RESET_REG 0x0B
 
-class QMC5883LCompass
-{
+class QMC5883LCompass {
 private:
-  uint8_t _ADDR;
-  float _magneticDeclinationDegrees = 0.0;
-  float _offset[3] = {0.0, 0.0, 0.0};
-  float _scale[3] = {1.0, 1.0, 1.0};
-  int16_t _vRaw[3] = {0, 0, 0};
-  float _vCalibrated[3] = {0.0, 0.0, 0.0};
+    uint8_t _ADDR;
+    float _magneticDeclinationDegrees;
+    float _offset[3];
+    float _scale[3];
+    int16_t _vRaw[3];
+    float _vCalibrated[3];
 
-  void _writeReg(uint8_t reg, uint8_t value);
-
-  void _applyCalibration();
+    void _writeReg(uint8_t reg, uint8_t value);
+    void _applyCalibration();
 
 public:
-  QMC5883LCompass();
-
-  void init();
-
-  void setMode(uint8_t mode, uint8_t odr, uint8_t rng, uint8_t osr);
-
-  void setMagneticDeclination(int degrees, uint8_t minutes);
-
-  void read();
-
-  int getX();
-
-  int getY();
-
-  int getZ();
-
-  int getAzimuth();
+    QMC5883LCompass(uint8_t address = QMC5883L_ADDR);
+    void init();
+    void setMode(uint8_t mode, uint8_t odr, uint8_t rng, uint8_t osr);
+    void setMagneticDeclination(int degrees, uint8_t minutes);
+    void read();
+    int getX();
+    int getY();
+    int getZ();
+    float getAzimuth();
 };
-
 #endif
