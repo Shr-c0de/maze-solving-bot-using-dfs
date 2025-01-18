@@ -142,43 +142,43 @@ void Sensor::readings(double *arr)
 
 ///////////////////////////////// compass module
 
-void QMC5883LCompass::_writeReg(uint8_t reg, uint8_t value)
-{
+QMC5883LCompass::QMC5883LCompass(uint8_t address) : _ADDR(address) {
+    _magneticDeclinationDegrees = 0.0;
+    _offset[0] =7.5; 
+    _offset[1] = 24;
+    _offset[2] = 375;
+    _scale[0] =1.00;
+     _scale[1] =1.11;
+      _scale[2] = 1.15;
+    _vRaw[0] = _vRaw[1] = _vRaw[2] = 0;
+    _vCalibrated[0] = _vCalibrated[1] = _vCalibrated[2] = 0.0;
+}
+
+void QMC5883LCompass::init() {
+    _writeReg(SET_RESET_REG, 0x01); // Set Reset Register
+    setMode(0x01, 0x0C, 0x10, 0x00); // Default mode configuration
+}
+
+void QMC5883LCompass::_writeReg(uint8_t reg, uint8_t value) {
     uint8_t data[2] = {reg, value};
     i2c_write_blocking(i2c_default, _ADDR, data, 2, false);
 }
 
-void QMC5883LCompass::_applyCalibration()
-{
-    for (int i = 0; i < 3; i++)
-    {
+void QMC5883LCompass::setMode(uint8_t mode, uint8_t odr, uint8_t rng, uint8_t osr) {
+    _writeReg(CONTROL_REG, mode | odr | rng | osr);
+}
+
+void QMC5883LCompass::setMagneticDeclination(int degrees, uint8_t minutes) {
+    _magneticDeclinationDegrees = degrees + minutes / 60.0f;
+}
+
+void QMC5883LCompass::_applyCalibration() {
+    for (int i = 0; i < 3; i++) {
         _vCalibrated[i] = (_vRaw[i] - _offset[i]) * _scale[i];
     }
 }
 
-QMC5883LCompass::QMC5883LCompass()
-{
-    _ADDR = QMC5883L_ADDR;
-}
-
-void QMC5883LCompass::init()
-{
-    _writeReg(SET_RESET_REG, 0x01);  // Set Reset Register
-    setMode(0x01, 0x0C, 0x10, 0x00); // Default mode configuration
-}
-
-void QMC5883LCompass::setMode(uint8_t mode, uint8_t odr, uint8_t rng, uint8_t osr)
-{
-    _writeReg(CONTROL_REG, mode | odr | rng | osr);
-}
-
-void QMC5883LCompass::setMagneticDeclination(int degrees, uint8_t minutes)
-{
-    _magneticDeclinationDegrees = degrees + minutes / 60.0f;
-}
-
-void QMC5883LCompass::read()
-{
+void QMC5883LCompass::read() {
     uint8_t data[6];
     uint8_t reg = DATA_REG;
     i2c_write_blocking(i2c_default, _ADDR, &reg, 1, true);
@@ -191,28 +191,22 @@ void QMC5883LCompass::read()
     _applyCalibration();
 }
 
-int QMC5883LCompass::getX()
-{
-    return (int)_vCalibrated[0];
+int QMC5883LCompass::getX() {
+    return _vCalibrated[0];
 }
 
-int QMC5883LCompass::getY()
-{
-    return (int)_vCalibrated[1];
+int QMC5883LCompass::getY() {
+    return _vCalibrated[1];
 }
 
-int QMC5883LCompass::getZ()
-{
-    return (int)_vCalibrated[2];
+int QMC5883LCompass::getZ() {
+    return _vCalibrated[2];
 }
 
-int QMC5883LCompass::getAzimuth()
-{
+float QMC5883LCompass::getAzimuth() {
     float heading = atan2(_vCalibrated[1], _vCalibrated[0]) * 180.0 / M_PI;
     heading += _magneticDeclinationDegrees;
-    if (heading < 0)
-        heading += 360;
-    if (heading >= 360)
-        heading -= 360;
-    return (int)heading;
+    if (heading < 0) heading += 360;
+    if (heading >= 360) heading -= 360;
+    return heading;
 }
