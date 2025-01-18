@@ -550,6 +550,36 @@ int main()
 
   multicore_launch_core1(core1main);
 
+  // Initialize I2C on SDA (Pin 8), SCL (Pin 9)
+    i2c_init(i2c_default, 100 * 1000);
+    gpio_set_function(8, GPIO_FUNC_I2C); // SDA
+    gpio_set_function(9, GPIO_FUNC_I2C); // SCL
+    gpio_pull_up(8);
+    gpio_pull_up(9);
+
+    // Initialize Compass
+    QMC5883LCompass compass;
+    compass.init();
+
+    // Set magnetic declination to 0° 39' E
+    compass.setMagneticDeclination(0, 39);
+
+    printf("Starting azimuth readings...\n");
+
+    while (true) {
+        compass.read();
+        int x = compass.getX();
+        int y = compass.getY();
+        int z = compass.getZ();
+        float azimuth = compass.getAzimuth();
+
+        // printf("X: %d, Y: %d, Z: %d\n",x,y,z);
+        // Print azimuth value
+        printf("Azimuth: %f degrees\n", azimuth);
+
+        sleep_ms(100);  // Delay between readings
+    }
+
   // QMC5883LCompass compass;
   // compass.init();
 
@@ -564,10 +594,10 @@ int main()
   //   cout << compass.getAzimuth() << endl;
   //   sleep_ms(500);
   // }
-  while(1){
-    M.move_forward(20);
-    sleep_ms(1000);
-  }
+  // while(1){
+  //   M.move_forward(20);
+  //   sleep_ms(1000);
+  // }
 
   return 0;
 }
