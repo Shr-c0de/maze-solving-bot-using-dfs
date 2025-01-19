@@ -220,24 +220,99 @@ void Motor::move_forward(double units)
 //     gpio_put(MOTOR_B_BACK, 0);
 // }
 
+// void Motor::turn_pid_speed(int target_angle)
+// {
+//     compass.read();
+//     sleep_ms(10);
+//     int current_direction = compass.getAzimuth();
+//     turn_error = abs(target_angle - current_direction);
+//     if (turn_error > 0)
+//     {
+//         speed[0] = 100;
+//         speed[1] = -100;
+//     }
+//     else
+//     {
+//         speed[0] = 100;
+//         speed[1] = -100;
+//     }
+
+//     integral[0] += turn_error * delta_time;
+//     prev_turn = turn_error;
+//     prev_time = current_time;
+// }
+
+// void Motor::turn(double degree)
+// {
+//     int initial_azimuth = compass.getAzimuth();
+//     int target_angle = initial_azimuth + degree;
+
+//     if (target_angle >= 360)
+//         target_angle -= 360;
+//     else if (target_angle < 0)
+//         target_angle += 360;
+
+//     reinitvar();
+
+//     while (true)
+//     {
+//         compass.read();
+
+//         if (abs(error) <= TURN_THRESHOLD)
+//             break;
+
+//         turn_pid_speed(target_angle);
+
+//         set_motor();
+
+//         sleep_ms(20);
+//     }
+
+//     gpio_put(MOTOR_A_FRONT, 0);
+//     gpio_put(MOTOR_A_BACK, 0);
+//     gpio_put(MOTOR_B_FRONT, 0);
+//     gpio_put(MOTOR_B_BACK, 0);
+// }
+
 void Motor::turn_pid_speed(int target_angle)
 {
-    compass.read();
-    sleep_ms(10);
-    int current_direction = compass.getAzimuth();
-    turn_error = abs(target_angle - current_direction);
-    if (turn_error > 0)
-    {
-        speed[0] = 100;
-        speed[1] = -100;
-    }
-    else
-    {
-        speed[0] = 100;
-        speed[1] = -100;
-    }
+    absolute_time_t current_time = get_absolute_time();
 
+    turn_error = target_angle - compass.getAzimuth();
+
+    
+    if (turn_error > 180)
+        turn_error -= 360;
+    else if (turn_error < -180)
+        turn_error += 360;
+
+    
+    double delta_time = absolute_time_diff_us(prev_time, current_time) / 1000000.0;
+    if(delta_time < 0.0001)
+    {
+        delta_time = 0.0001;
+    } 
+
+    
+    double derivative = (turn_error - prev_turn) / delta_time;
+
+    if(abs(turn_error) > TURN_THRESHOLD)
+    {
     integral[0] += turn_error * delta_time;
+    integral[0] = constrain(integral[0], -1000, 1000);
+    }
+    
+    double turn_speed = (ktp * turn_error) + (ktd * derivative) + (kti * integral[0]);
+
+    
+    turn_speed = constrain(turn_speed, -150, 150);
+
+     if(abs(turn_speed) <10) turn_speed = (turn_speed > 0) ? 10 : -10;
+    
+    speed[0] = turn_speed;
+    speed[1] = -turn_speed;
+
+    
     prev_turn = turn_error;
     prev_time = current_time;
 }
@@ -258,16 +333,29 @@ void Motor::turn(double degree)
     {
         compass.read();
 
+        int current_azimuth = compass.getAzimuth();
+        int error = target_angle - current_azimuth;
+
+    
+        if (error > 180)
+            error -= 360;
+        else if (error < -180)
+            error += 360;
+
+        
         if (abs(error) <= TURN_THRESHOLD)
             break;
 
+        
         turn_pid_speed(target_angle);
 
+        
         set_motor();
 
-        sleep_ms(20);
+        sleep_ms(1000); 
     }
 
+    
     gpio_put(MOTOR_A_FRONT, 0);
     gpio_put(MOTOR_A_BACK, 0);
     gpio_put(MOTOR_B_FRONT, 0);
