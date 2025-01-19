@@ -15,6 +15,7 @@
 #define WHEEL_BASE 14.5
 #define PI 3.1415
 #define THRESHOLD 5
+#define TURN_THRESHOLD 4
 
 #define ENCODER_A 14
 #define ENCODER_B 15
@@ -28,8 +29,8 @@ private:
     uint slice_num_a, slice_num_b;
     absolute_time_t prev_time;
 
-    const double kp = 0.1, ki = 0.01, kd = 0.2;
-    const double ktp = 0.1, kti = 0.01, ktd = 0.2; //for turns
+    const double kp = 1, ki = 0.01, kd = 0.2;
+    const double ktp = 0.1, kti = 0.01, ktd = 0.2; // for turns
 
     double error[2] = {0, 0};
     double prev_error[2] = {0, 0};
@@ -53,8 +54,7 @@ private:
     void set_motor();
 
     static void global_encoder_irq_handler(uint gpio, uint32_t events);
-    // static void global_encoder_irq_handler_neg(uint gpio, uint32_t events);
-    void turn_PID(int target, int azimuth);
+    void turn_pid_speed(int units);
 
 public:
     QMC5883LCompass compass;
