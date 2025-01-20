@@ -113,8 +113,8 @@ void Motor::front_pid_speed(int target)
     double derivative0 = ((error[0] - prev_error[0]) / (current_time / 10000 - prev_time / 10000));
     double derivative1 = ((error[1] - prev_error[1]) / (current_time / 10000 - prev_time / 10000));
 
-    speed[0] = (kp * error[0] + kd * derivative0 + ki * integral[0])/10;
-    speed[1] = (kp * error[1] + kd * derivative1 + ki * integral[1])/10;
+    speed[0] = (kp * error[0] + kd * derivative0 + ki * integral[0]) / 10;
+    speed[1] = (kp * error[1] + kd * derivative1 + ki * integral[1]) / 10;
 
     prev_error[0] = error[0];
     prev_error[1] = error[1];
@@ -127,54 +127,48 @@ void Motor::front_pid_speed(int target)
 
 void Motor::move_forward(double units)
 {
-    int steps = (units * 750);
+    int steps = (units * 700);
 
     reinitvar();
     printf("Forward target = %d\n", steps);
 
     while (cA < steps || cB < steps)
     {
-        //front_pid_speed(steps);
-        std::cout << speed[0] << " " << speed[1] << std::endl;
+        // front_pid_speed(steps);
+        // std::cout << speed[0] << " " << speed[1] << std::endl;
         uint32_t k;
         // mutex_enter_blocking(mutex);
         int left_dist = distances[0], right_dist = distances[3];
         int fL = distances[1], fR = distances[2];
 
-        speed[0] = 50;
-        speed[1] = 50;
+        speed[0] = 90;
+        speed[1] = 90;
 
         if (cA > cB + THRESHOLD)
         {
-            speed[0] -= 50;
+            speed[0] -= 70;
         }
         else if (cB > cA + THRESHOLD)
         {
-            speed[1] -= 50;
+            speed[1] -= 70;
         }
 
+        if ((left_dist < 8) || (right_dist > 11 && right_dist < 31))
+        {
+            speed[1] -= 30;
+            speed[0] += 30;
+        }
+        else if ((right_dist < 8) || (left_dist > 11 && left_dist < 31))
+        {
+            speed[1] += 30;
+            speed[0] -= 30;
+        }
         if (fL < 20 || fR < 20)
         {
             speed[0] = 0;
             speed[1] = 0;
             set_motor();
             break;
-        }
-
-        if ((left_dist < 7) || (right_dist > 13 && right_dist < 27))
-        {
-            speed[1] -= 25;
-            speed[0] += 25;
-        }
-        else if ((right_dist < 7) || (left_dist > 13 && left_dist < 27))
-        {
-            speed[1] += 25;
-            speed[0] -= 25;
-        }
-        if (fL > 1000 | fR > 1000)
-        {
-            speed[0] = 0;
-            speed[1] = 0;
         }
         set_motor();
     }
