@@ -29,7 +29,7 @@ private:
     uint slice_num_a, slice_num_b;
     absolute_time_t prev_time;
 
-    const double kp = 1, ki = 0.01, kd = 0.2;
+    const double kp = 2, ki = 0.01, kd = 0.2;
     const double ktp = 0.1, kti = 0.01, ktd = 0.2; // for turns
 
     double error[2] = {0, 0};
@@ -54,7 +54,7 @@ private:
     void set_motor();
 
     static void global_encoder_irq_handler(uint gpio, uint32_t events);
-    void turn_pid_speed(int units);
+    //void turn_pid_speed(int units);
 
 public:
     QMC5883LCompass compass;

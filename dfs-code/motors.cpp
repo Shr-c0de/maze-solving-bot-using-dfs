@@ -113,17 +113,8 @@ void Motor::front_pid_speed(int target)
     double derivative0 = ((error[0] - prev_error[0]) / (current_time / 10000 - prev_time / 10000));
     double derivative1 = ((error[1] - prev_error[1]) / (current_time / 10000 - prev_time / 10000));
 
-    speed[0] = (kp * error[0] + kd * derivative0 + ki * integral[0]);
-    speed[1] = (kp * error[1] + kd * derivative1 + ki * integral[1]);
-
-    if (cA > cB + THRESHOLD)
-    {
-        speed[0] = 0;
-    }
-    else if (cB > cA + THRESHOLD)
-    {
-        speed[1] = 0;
-    }
+    speed[0] = (kp * error[0] + kd * derivative0 + ki * integral[0])/10;
+    speed[1] = (kp * error[1] + kd * derivative1 + ki * integral[1])/10;
 
     prev_error[0] = error[0];
     prev_error[1] = error[1];
@@ -136,23 +127,33 @@ void Motor::front_pid_speed(int target)
 
 void Motor::move_forward(double units)
 {
-    int steps = (units * 3000);
+    int steps = (units * 750);
 
     reinitvar();
     printf("Forward target = %d\n", steps);
 
     while (cA < steps || cB < steps)
     {
-        front_pid_speed(steps);
+        //front_pid_speed(steps);
         std::cout << speed[0] << " " << speed[1] << std::endl;
         uint32_t k;
-
+        // mutex_enter_blocking(mutex);
         int left_dist = distances[0], right_dist = distances[3];
         int fL = distances[1], fR = distances[2];
-        // std::cout << "move_f: " << left_dist << " " << fL << " " << fR << " " << right_dist << std::endl;
-        std::cout << "move_f speed: " << speed[0] << " " << speed[1] << std::endl;
 
-        if (fL < 8 || fR < 8)
+        speed[0] = 50;
+        speed[1] = 50;
+
+        if (cA > cB + THRESHOLD)
+        {
+            speed[0] -= 50;
+        }
+        else if (cB > cA + THRESHOLD)
+        {
+            speed[1] -= 50;
+        }
+
+        if (fL < 20 || fR < 20)
         {
             speed[0] = 0;
             speed[1] = 0;
@@ -160,25 +161,29 @@ void Motor::move_forward(double units)
             break;
         }
 
-        if (left_dist < 6)
+        if ((left_dist < 7) || (right_dist > 13 && right_dist < 27))
         {
-            speed[1] /= 2;
-            speed[0] += 50;
+            speed[1] -= 25;
+            speed[0] += 25;
         }
-        else if (right_dist < 6)
+        else if ((right_dist < 7) || (left_dist > 13 && left_dist < 27))
         {
-            speed[0] /= 2;
-            speed[1] += 50;
+            speed[1] += 25;
+            speed[0] -= 25;
+        }
+        if (fL > 1000 | fR > 1000)
+        {
+            speed[0] = 0;
+            speed[1] = 0;
         }
         set_motor();
-
-        sleep_ms(20);
     }
 
     gpio_put(MOTOR_A_FRONT, 0);
     gpio_put(MOTOR_A_BACK, 0);
     gpio_put(MOTOR_B_FRONT, 0);
     gpio_put(MOTOR_B_BACK, 0);
+    sleep_ms(500);
 }
 
 // void Motor::turn_PID(int target, int azimuth)
@@ -220,24 +225,70 @@ void Motor::move_forward(double units)
 //     gpio_put(MOTOR_B_BACK, 0);
 // }
 
+void Motor::turn(double degree) // 0 is clockwise right, 1 is anticlockwise left
+{
+    int target_angle = 190, direction = degree > 0 ? 1 : -1;
+    reinitvar();
+
+    while (cA < target_angle || cB < target_angle)
+    {
+        speed[0] = 60 * direction;
+        speed[1] = 60 * (-direction);
+
+        if (cA > cB + THRESHOLD)
+        {
+            speed[0] = 0;
+        }
+        else if (cB > cA + THRESHOLD)
+        {
+            speed[1] = 0;
+        }
+        set_motor();
+
+        // sleep_ms(20);
+    }
+
+    gpio_put(MOTOR_A_FRONT, 0);
+    gpio_put(MOTOR_A_BACK, 0);
+    gpio_put(MOTOR_B_FRONT, 0);
+    gpio_put(MOTOR_B_BACK, 0);
+    sleep_ms(500);
+}
+
 // void Motor::turn_pid_speed(int target_angle)
 // {
-//     compass.read();
-//     sleep_ms(10);
-//     int current_direction = compass.getAzimuth();
-//     turn_error = abs(target_angle - current_direction);
-//     if (turn_error > 0)
+//     absolute_time_t current_time = get_absolute_time();
+
+//     turn_error = target_angle - compass.getAzimuth();
+
+//     if (turn_error > 180)
+//         turn_error -= 360;
+//     else if (turn_error < -180)
+//         turn_error += 360;
+
+//     double delta_time = absolute_time_diff_us(prev_time, current_time) / 1000000.0;
+//     if(delta_time < 0.0001)
 //     {
-//         speed[0] = 100;
-//         speed[1] = -100;
-//     }
-//     else
-//     {
-//         speed[0] = 100;
-//         speed[1] = -100;
+//         delta_time = 0.0001;
 //     }
 
+//     double derivative = (turn_error - prev_turn) / delta_time;
+
+//     if(abs(turn_error) > TURN_THRESHOLD)
+//     {
 //     integral[0] += turn_error * delta_time;
+//     integral[0] = constrain(integral[0], -1000, 1000);
+//     }
+
+//     double turn_speed = (ktp * turn_error) + (ktd * derivative) + (kti * integral[0]);
+
+//     turn_speed = constrain(turn_speed, -150, 150);
+
+//      if(abs(turn_speed) <10) turn_speed = (turn_speed > 0) ? 10 : -10;
+
+//     speed[0] = turn_speed;
+//     speed[1] = -turn_speed;
+
 //     prev_turn = turn_error;
 //     prev_time = current_time;
 // }
@@ -258,6 +309,14 @@ void Motor::move_forward(double units)
 //     {
 //         compass.read();
 
+//         int current_azimuth = compass.getAzimuth();
+//         int error = target_angle - current_azimuth;
+
+//         if (error > 180)
+//             error -= 360;
+//         else if (error < -180)
+//             error += 360;
+
 //         if (abs(error) <= TURN_THRESHOLD)
 //             break;
 
@@ -265,7 +324,7 @@ void Motor::move_forward(double units)
 
 //         set_motor();
 
-//         sleep_ms(20);
+//         sleep_ms(1000);
 //     }
 
 //     gpio_put(MOTOR_A_FRONT, 0);
@@ -273,91 +332,3 @@ void Motor::move_forward(double units)
 //     gpio_put(MOTOR_B_FRONT, 0);
 //     gpio_put(MOTOR_B_BACK, 0);
 // }
-
-void Motor::turn_pid_speed(int target_angle)
-{
-    absolute_time_t current_time = get_absolute_time();
-
-    turn_error = target_angle - compass.getAzimuth();
-
-    
-    if (turn_error > 180)
-        turn_error -= 360;
-    else if (turn_error < -180)
-        turn_error += 360;
-
-    
-    double delta_time = absolute_time_diff_us(prev_time, current_time) / 1000000.0;
-    if(delta_time < 0.0001)
-    {
-        delta_time = 0.0001;
-    } 
-
-    
-    double derivative = (turn_error - prev_turn) / delta_time;
-
-    if(abs(turn_error) > TURN_THRESHOLD)
-    {
-    integral[0] += turn_error * delta_time;
-    integral[0] = constrain(integral[0], -1000, 1000);
-    }
-    
-    double turn_speed = (ktp * turn_error) + (ktd * derivative) + (kti * integral[0]);
-
-    
-    turn_speed = constrain(turn_speed, -150, 150);
-
-     if(abs(turn_speed) <10) turn_speed = (turn_speed > 0) ? 10 : -10;
-    
-    speed[0] = turn_speed;
-    speed[1] = -turn_speed;
-
-    
-    prev_turn = turn_error;
-    prev_time = current_time;
-}
-
-void Motor::turn(double degree)
-{
-    int initial_azimuth = compass.getAzimuth();
-    int target_angle = initial_azimuth + degree;
-
-    if (target_angle >= 360)
-        target_angle -= 360;
-    else if (target_angle < 0)
-        target_angle += 360;
-
-    reinitvar();
-
-    while (true)
-    {
-        compass.read();
-
-        int current_azimuth = compass.getAzimuth();
-        int error = target_angle - current_azimuth;
-
-    
-        if (error > 180)
-            error -= 360;
-        else if (error < -180)
-            error += 360;
-
-        
-        if (abs(error) <= TURN_THRESHOLD)
-            break;
-
-        
-        turn_pid_speed(target_angle);
-
-        
-        set_motor();
-
-        sleep_ms(1000); 
-    }
-
-    
-    gpio_put(MOTOR_A_FRONT, 0);
-    gpio_put(MOTOR_A_BACK, 0);
-    gpio_put(MOTOR_B_FRONT, 0);
-    gpio_put(MOTOR_B_BACK, 0);
-}

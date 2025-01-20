@@ -192,13 +192,13 @@ public:
   void printNodes()
   {
     ListNode *current = head;
-    cout << "Current Nodes: ";
+    //cout << "Current Nodes: ";
     while (current != nullptr)
     {
-      cout << "(" << current->data.x << ", " << current->data.y << ") ";
+      //cout << "(" << current->data.x << ", " << current->data.y << ") ";
       current = current->next;
     }
-    cout << endl;
+    //cout << endl;
   }
   */
 
@@ -214,7 +214,7 @@ public:
 
 char TurnLeft(char direction)
 {
-  M.turn(1);
+  M.turn(0);
   if (direction == 'N')
     return 'W';
   if (direction == 'W')
@@ -226,7 +226,8 @@ char TurnLeft(char direction)
 
 char Uturn(char dir)
 {
-  M.turn(180);
+  M.turn(0);
+  M.turn(0);
 
   if (dir == 'N')
     return 'S';
@@ -239,7 +240,7 @@ char Uturn(char dir)
 
 char TurnRight(char direction)
 {
-  M.turn(90);
+  M.turn(1);
   if (direction == 'N')
     return 'E';
   if (direction == 'E')
@@ -283,7 +284,7 @@ int checknodes(int frontdistance, int leftdistance, int rightdistance)
 
   if (count > 1)
   {
-    cout << "It is a node" << endl;
+    //cout << "It is a node" << endl;
     return 1;
   }
   return 0;
@@ -292,7 +293,7 @@ int checknodes(int frontdistance, int leftdistance, int rightdistance)
 // Left to define
 int frontdistance(int front1Distance, int front2Distance)
 {
-  return max(front1Distance, front2Distance);
+  return (front1Distance + front2Distance) / 2;
 }
 
 LinkedList path;
@@ -313,12 +314,9 @@ void DFS()
   int flag = 0;
 
   int leftDistance, frontleft, frontright, rightDistance;
-  sleep_ms(2000);
 
   while (true)
   {
-    S.readings(distances);
-    printf("DFS: %f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
 
     // int backtrackingSteps = 0;
     // const int MAX_BACKTRACKING_STEPS = 100;
@@ -330,6 +328,7 @@ void DFS()
     frontleft = distances[1];
     frontright = distances[2];
     rightDistance = distances[3];
+    printf("DFS: %f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
     mutex_exit(&mutex);
 
     int frontDistance = frontdistance(frontleft, frontright);
@@ -389,32 +388,32 @@ void DFS()
     if (frontDistance > 20 && !visited.contains(front_pos))
     {
       flag = 0;
-      cout << "front pos: " << front_pos.x << " , " << front_pos.y << endl;
+      //cout << "front pos: " << front_pos.x << " , " << front_pos.y << endl;
 
       MoveForward(x, y, direction);
       path.addpathEnd(front_pos);
       visited.addEnd(front_pos);
 
-      cout << "Moving forward" << endl;
+      //cout << "Moving forward" << endl;
     }
 
-    else if (leftDistance > 30 && !visited.contains(left_pos))
+    else if (leftDistance > 27 && !visited.contains(left_pos))
     {
-      cout << "left pos: " << left_pos.x << " , " << left_pos.y << endl;
+      //cout << "left pos: " << left_pos.x << " , " << left_pos.y << endl;
       flag = 1;
       direction = TurnLeft(direction);
-      cout << "direction: " << direction << endl;
+      //cout << "direction: " << direction << endl;
 
-      cout << "Turning Left" << endl;
+      //cout << "Turning Left" << endl;
     }
 
-    else if (rightDistance > 30 && !visited.contains(right_pos))
+    else if (rightDistance > 27 && !visited.contains(right_pos))
     {
-      cout << "right pos: " << right_pos.x << " , " << right_pos.y << endl;
+      //cout << "right pos: " << right_pos.x << " , " << right_pos.y << endl;
       flag = 1;
       direction = TurnRight(direction);
 
-      cout << "Turning Right" << endl;
+      //cout << "Turning Right" << endl;
     }
 
     else
@@ -518,7 +517,7 @@ void DFS()
         // }
         if (path.isEmpty() || nodes.isEmpty())
         {
-          // cout << " Backtracking terminated. Path or Nodes list is empty." << endl;
+          // //cout << " Backtracking terminated. Path or Nodes list is empty." << endl;
           // M.turn(3, 1);
           break;
         }
@@ -534,45 +533,28 @@ void core1main()
 {
   while (1)
   {
+    //mutex_enter_blocking(&mutex);
     S.readings(distances);
+    //mutex_exit(&mutex);
   }
 }
 
 int main()
 {
   stdio_init_all();
-  mutex_init(&mutex);
-  sleep_ms(2000);
-
   PIO pio = pio0;
   uint offset = pio_add_program(pio, &blink_program);
   blink_pin_forever(pio, 0, offset, PICO_DEFAULT_LED_PIN, 1);
-
   multicore_launch_core1(core1main);
-while(1){
-  turn(90);
-}
+
+  mutex_init(&mutex);
+  sleep_ms(3000);
+  // while (1)
+  // {
+  //   M.move_forward(1);
+  //   sleep_ms(1000);
+  // }
   DFS();
 
   return 0;
 }
-
-// blink, doesnt use cpu
-// while (1)
-// {
-//   printf("%f, %f, %f, %f\n", distances[0], distances[1], distances[2], distances[3]);
-//   sleep_ms(200);
-// }
-
-// while (1)
-// {
-//   M.move_forward(3);
-//   sleep_ms(2000);
-//   M.turn(1, 0);
-//   sleep_ms(2000);
-//   M.turn(1, 1);
-//   sleep_ms(2000);
-// }
-// DFS();
-
-// infinity - 8190
